@@ -19,6 +19,14 @@ def create_product(name: str = Form(..., max_length=255),
 
     return 204
 
+@router.get('/{product_id}')
+def get_product(product_id: int = Path(...),
+                db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id). first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
 @router.patch('/{product_id}')
 def change_product(product_id: int = Path(...),
                    name: str = Form(''),

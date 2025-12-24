@@ -1,13 +1,14 @@
-from fastapi import APIRouter, HTTPException, Form, Query, Depends
+from fastapi import APIRouter, HTTPException, Path, Query, Depends
 from sqlalchemy.orm import Session
 from core.db import get_db
 from core.security import get_current_user
+from models.users import User
 from models.orders import Order, OrderItem
 from models.products import Product
 
 router = APIRouter(prefix='/orders', tags=["Order"])
 
-@router.post('/')
+@router.post('')
 def create_order(products: list = Query(...),
                  buyer: int = Depends(get_current_user),
                  db: Session = Depends(get_db)):
@@ -26,4 +27,32 @@ def create_order(products: list = Query(...),
         total_amount += product.price * quantity
     new_order.total_price = total_amount
     db.add(new_order)
+    db.commit()
+
+@router.patch('/{order_id}/cancel')
+def cancel_order(order_id: int = Path(...),
+                 buyer: User = Depends(get_current_user),
+                 db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if buyer.id != order.buyer_id:
+        raise HTTPException(status_code=403, detail="This is not your order")
+    
+    order.status = "canceled"
+    db.commit()
+
+@router.patch('/{order_id}/complete')
+def complete_order(order_id: int = Path(...),
+                   buyer: User = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if buyer.id != order.buyer_id:
+        raise HTTPException(status_code=403, detail="This is not your order")
+    
+    order.status = "completed"
     db.commit()

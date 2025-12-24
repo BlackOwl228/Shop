@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from core.db import get_db
 from core.security import hash_password , verify_password
 from models.users import User
-from core.security import create_access_token
+from models.tokens import RefreshToken
+from core.tokens.access import create_access_token
+from core.tokens.refresh import delete_refresh_token
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -34,8 +36,18 @@ def login_user(email: str = Form(...),
     
     return create_access_token(user.id)
 
+@router.post('/refresh')
+def refresh_token(token: str = Form(...),
+                  db: Session = Depends(get_db)):
+    refresh_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
+    if refresh_token:
+        raise HTTPException(status_code=401, detail="Wrong token, login again")
+    
+    return create_access_token(refresh_token.user_id)
+
 @router.delete('/logout')
-def logout_user(#user_id: Depends(),
+def logout_user(token: str = Form(...),
                 db: Session = Depends(get_db)
                 ):
-    pass
+    delete_refresh_token(token)
+    return 204

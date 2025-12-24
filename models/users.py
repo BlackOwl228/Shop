@@ -11,6 +11,8 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     hash = Column(String(255), nullable=False)
 
+    tokens = relationship("RefreshToken", back_populates="user")
+
     orders = relationship("Order", back_populates="user")
     cart = relationship("Product", secondary=cart, back_populates="in_cart_user")
 
