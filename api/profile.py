@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Form, Path
+from fastapi import APIRouter, HTTPException, UploadFile, Depends, Form, File
 from sqlalchemy.orm import Session
 from models.users import User
 from models.products import Product
 from core.security import get_current_user, verify_password, hash_password
 from core.db import get_db
+from core.media import save_avatar, delete_image
 from services.products import product_by_id
 
 router = APIRouter(prefix='/me', tags=["Profile"])
@@ -17,6 +18,16 @@ def change_name(new_name: str = Form(...),
                 user: User = Depends(get_current_user),
                 db: Session = Depends(get_db)):
     user.name = new_name
+    db.commit()
+
+    return 204
+
+@router.patch('/avatar')
+def change_avatar(new_avatar: UploadFile = File(),
+                  user: User = Depends(get_current_user),
+                  db: Session = Depends(get_db)):
+    if user.avatar: delete_image("avatar", user.avatar)
+    user.avatar = save_avatar(new_avatar, user.id)
     db.commit()
 
     return 204

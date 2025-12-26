@@ -11,6 +11,7 @@ class Product(Base):
     price = Column(Numeric(10, 2), nullable=False)
     rating = Column(Float, default=0.0, nullable=False)
     description = Column(Text, nullable=True)
+    image = Column(String(128), nullable=False)
     seller_id = Column(ForeignKey("users.id"), nullable=False)
 
     seller = relationship("User")
