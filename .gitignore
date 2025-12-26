@@ -34,3 +34,5 @@ Thumbs.db # Windows
 
 # Jupyter Notebook files
 .ipynb_checkpoints
+
+media/

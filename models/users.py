@@ -10,10 +10,9 @@ class User(Base):
     name = Column(String(100), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     hash = Column(String(255), nullable=False)
+    avatar = Column(String(128), nullable=True)
 
     tokens = relationship("RefreshToken", back_populates="user")
-
     orders = relationship("Order", back_populates="user")
     cart = relationship("Product", secondary=cart, back_populates="in_cart_user")
-
     favorites = relationship("Product", secondary=favorites, back_populates="favorited_by_user")

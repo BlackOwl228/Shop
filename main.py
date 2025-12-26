@@ -2,7 +2,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 app = FastAPI()
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 from api import auth, orders, products, profile
 app.include_router(auth.router)
