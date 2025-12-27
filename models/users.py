@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy import String, Integer, Column
+from sqlalchemy import String, Integer, Column, DateTime, func
 from core.db import Base
 from models.collections import cart, favorites
 
@@ -11,6 +11,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     hash = Column(String(255), nullable=False)
     avatar = Column(String(128), nullable=True)
+    created_at = Column(DateTime, default=func.now())
 
     tokens = relationship("RefreshToken", back_populates="user")
     orders = relationship("Order", back_populates="user")

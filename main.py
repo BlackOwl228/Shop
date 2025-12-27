@@ -6,11 +6,12 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI()
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
-from api import auth, orders, products, profile
+from api import auth, orders, products, profile, search
 app.include_router(auth.router)
 app.include_router(orders.router)
 app.include_router(products.router)
 app.include_router(profile.router)
+app.include_router(search.router)
 
 import uvicorn
 if __name__ == '__main__':
