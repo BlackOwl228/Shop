@@ -1,5 +1,6 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column, Integer, DateTime, func, Numeric, String
+
 from core.db import Base
 
 class Order(Base):
@@ -7,8 +8,9 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True)
     buyer_id = Column(Integer, ForeignKey("users.id"))
-    total_price = Column(Numeric, nullable=False, default=0)
+    total_price = Column(Numeric(10, 2), nullable=False, default=0)
     status = Column(String, default="pending")
+    payment_intent = Column(String, nullable=False)
     created_at = Column(DateTime, default=func.now())
 
     user = relationship("User", back_populates="orders")
@@ -22,7 +24,7 @@ class OrderItem(Base):
     product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"))
 
     quantity = Column(Integer, default=1, nullable=False)
-    unit_price = Column(Numeric, nullable=False)
+    unit_price = Column(Numeric(10, 2), nullable=False)
 
     order = relationship("Order", back_populates="order_items")
     product = relationship("Product", back_populates="order_items")

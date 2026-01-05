@@ -1,53 +1,97 @@
-from fastapi import APIRouter, HTTPException, Form, Depends
+from datetime import datetime, timedelta, timezone
+import os, uuid
+
+from fastapi import APIRouter, HTTPException, Form, Depends, Path
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from core.db import get_db
-from core.security import hash_password , verify_password
-from models.users import User
-from models.tokens import RefreshToken
-from core.tokens.access import create_access_token
-from core.tokens.refresh import delete_refresh_token
+from pydantic import ValidationError
+
+from core import get_db, hash_password, verify_password, create_access_token, create_refresh_token, delete_refresh_token, send_message
+from models import User, RefreshToken, EmailToken
+from schemas.auth import UserEmail, UserName, UserPassword, LoginResponse, RefreshResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-@router.post('/reg')
-def registration(name: str = Form(...),
-                 email: str = Form(...),
-                 password: str = Form(...),
+email_timedelta = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
+verify_email_time = datetime.now(timezone.utc) + timedelta(hours=email_timedelta)
+
+@router.post('/reg', status_code=204)
+def registration(name: str = UserName,
+                 email: str = UserEmail,
+                 password: str = UserPassword,
                  db: Session = Depends(get_db)
                  ):
+    
     exist_user = db.query(User).filter(User.email == email).first()
     if exist_user:
-        raise HTTPException(status_code=409, detail="User is already exists")
+        raise HTTPException(status_code=409, detail="User already exists")
     
     hashed_password = hash_password(password)
-    new_user = User(name = name, email = email, hash = hashed_password)
-    db.add(new_user)
+    user = User(name=name, email=email, hashed_password=hashed_password)
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    user_uuid = uuid.uuid4().hex
+    expires_at = verify_email_time
+    token = EmailToken(id=user_uuid, user_id=user.id, expires_at=expires_at)
+
+    db.add(token)
     db.commit()
 
-@router.post('/login')
-def login_user(email: str = Form(...),
-               password: str = Form(...),
+    send_message(user.email, "Verify your email", f"Click: http://localhost:8000/auth/verify/{token.id}")
+
+@router.post('/login', status_code=201, response_model=LoginResponse)
+def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
                db: Session = Depends(get_db)
                ):
+    
+    try:
+        email = UserEmail.model_validate(form_data.username)
+        password = UserPassword.model_validate(form_data.password)
+    except ValidationError:
+        raise HTTPException(status_code=422, detail="Incorrect data, try again")
+
     user = db.query(User).filter(User.email == email).first()
 
-    if not user or not verify_password(password, user.hash):
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Wrong data, try again")
     
-    return create_access_token(user.id)
+    return {"access_token": create_access_token(user.id),
+            "refresh_token": create_refresh_token(user.id),
+            "token_type": "bearer"}
 
-@router.post('/refresh')
+@router.post('/verify/{token_id}', status_code=204)
+def verify_email(token_id: str = Path(..., ge=1),
+                 db: Session = Depends(get_db)):
+    
+    token = db.query(EmailToken).filter(EmailToken.id == token_id,
+                                        EmailToken.expires_at >= datetime.now(timezone.utc)).first()
+    if not token:
+        raise HTTPException(status_code=404, detail="Token not found")
+    
+    user = db.query(User).filter(User.id == token.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.email_verified = True
+
+    db.delete(token)
+    db.commit()
+
+@router.post('/refresh', status_code=201, response_model=RefreshResponse)
 def refresh_token(token: str = Form(...),
                   db: Session = Depends(get_db)):
+    
     refresh_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
     if refresh_token:
         raise HTTPException(status_code=401, detail="Wrong token, login again")
     
-    return create_access_token(refresh_token.user_id)
+    return {"access_token": create_access_token(refresh_token.user_id)}
 
-@router.delete('/logout')
+@router.delete('/logout', status_code=204)
 def logout_user(token: str = Form(...),
                 db: Session = Depends(get_db)
                 ):
     delete_refresh_token(token)
-    return 204

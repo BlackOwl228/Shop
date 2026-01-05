@@ -1,7 +1,8 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import String, Text, ForeignKey, Numeric, Integer, Float, Column, DateTime, func
+
 from core.db import Base
-from models.collections import cart, favorites
+from models import cart, favorites
 
 class Product(Base):
     __tablename__ = "products"

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import String, Integer, Column, Table, ForeignKey
+
 from core.db import Base
 
 cart = Table(

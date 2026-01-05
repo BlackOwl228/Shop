@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+
 from core.db import Base
 
 class RefreshToken(Base):
@@ -10,3 +11,12 @@ class RefreshToken(Base):
     expires_at = Column(DateTime, nullable=False)
 
     user = relationship("User", back_populates="tokens")
+
+class EmailToken(Base):
+    __tablename__ = "email_tokens"
+
+    id = Column(String(40), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    expires_at = Column(DateTime, nullable=False)
+
+    user = relationship("User", back_populates="email_token")

@@ -1,10 +1,10 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
-from core.db import get_db
 from fastapi.security import OAuth2PasswordBearer
-from .tokens.access import decode_access_token
-from models.users import User
+
+from core import get_db, decode_access_token
 from services.checking import check_user_exists
+from models import User
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -20,7 +20,7 @@ def get_current_user(token: str = Depends(oauth_scheme),
 
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"])
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str):
     return pwd_context.hash(password)
