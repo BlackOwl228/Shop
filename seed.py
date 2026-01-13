@@ -49,3 +49,45 @@ def seed_products(count):
 if __name__ == "__main__":
     seed_products(200)
     print("Users seeded")'''
+
+'''
+import requests, os
+from random import randint
+from core.db import SessionLocal
+from models import Product
+from core import save_product_image
+
+def seed_products():
+    db = SessionLocal()
+    data = requests.get("https://fakestoreapi.com/products").json()
+    try:
+        for item in data:
+            product = Product(
+                name=item["title"],
+                price=int(item["price"]),
+                description=item["description"],
+                rating=item["rating"]["rate"],
+                seller_id=randint(1, 100)
+            )
+            db.add(product)
+            db.flush()
+            url = item["image"]
+            ext = url.split('.')[-1].split("?")[0]
+            folder = os.path.join("media", "product")
+            os.makedirs(folder, exist_ok=True)
+            filename = f"{product.id}.{ext}"
+            full_path = os.path.join(folder, filename)
+
+            r = requests.get(url)
+            with open(full_path, "wb") as f:
+                f.write(r.content)
+
+            product.image = filename
+
+        db.commit()
+    finally:
+        db.close()
+
+if __name__ == "__main__":
+    seed_products()
+'''

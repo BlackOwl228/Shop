@@ -1,0 +1,49 @@
+<h1>Результаты поиска</h1>
+
+{% if query %}
+<p>По запросу: <b>{{ query }}</b></p>
+{% endif %}
+
+{% if products %}
+<div class="row row-cols-2 row-cols-md-5 g-3">
+    {% for product in products %}
+    <div class="col">
+        <div class="card h-100">
+
+            <img
+                src="/media/product/{{ product.image }}"
+                class="card-img-top"
+                alt="{{ product.name }}"
+                style="object-fit: cover; height: 180px;">
+
+            <div class="card-body p-2">
+
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold">{{ product.price | int }} ₽</span>
+                    <span class="badge bg-warning text-dark">
+                        ★ {{ product.rating }}
+                    </span>
+                </div>
+
+                <div class="small text-muted">
+                    {{ product.name }}
+                </div>
+                <form action="/favorites/{{ product.id }}" method="post">
+                    <button class="btn btn-outline-warning w-100">
+                        {% if product.id in user_favorites %}
+                            ★ Удалить из избранного
+                        {% else %}
+                            ☆ В избранное
+                        {% endif %}
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+    <p>Ничего не найдено</p>
+{% endif %}

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 from jose import jwt
 
 SecretKey = os.getenv("SECRET_KEY")
@@ -32,3 +33,12 @@ def decode_access_token(token: str) -> int:
             raise Exception
     except Exception:
         raise HTTPException(status_code=401, detail="Token isn't correct")
+    
+from models import User
+    
+def get_current_user_from_jwt(token: str, db: Session):
+    user_id = decode_access_token(token)
+    user = db.query(User).get(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user

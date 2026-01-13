@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Корзина</h1>
+
+{% if cart_items %}
+<div class="row">
+    {% for item in cart_items %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <img src="/static/{{ item.product.image }}" class="card-img-top" alt="{{ item.product.name }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ item.product.name }}</h5>
+                <p class="card-text">{{ item.product.price | int }} ₽</p>
+            </div>
+            <div class="card-footer">
+                <form action="/cart/remove/{{ item.product.id }}" method="delete">
+                    <button class="btn btn-danger w-100">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<a href="/front/checkout" class="btn btn-success mt-3">Оформить заказ</a>
+
+{% else %}
+<p>Корзина пуста.</p>
+{% endif %}
+
+{% endblock %}

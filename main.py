@@ -7,14 +7,24 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI()
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
-from api import auth, orders, products, profile, search, payment
+#Роутеры для апи
+from api import auth, orders, products, profile, search
 
 app.include_router(auth.router)
 app.include_router(orders.router)
 app.include_router(products.router)
 app.include_router(profile.router)
 app.include_router(search.router)
-#app.include_router(payment.router)
+
+#Роутеры для сайта
+from front_routers import home_web, profile_web, auth_web, cart_web, checkout_web, search_web
+
+app.include_router(home_web.router)
+app.include_router(profile_web.router)
+app.include_router(auth_web.router)
+app.include_router(cart_web.router)
+app.include_router(checkout_web.router)
+app.include_router(search_web.router)
 
 import uvicorn
 if __name__ == '__main__':

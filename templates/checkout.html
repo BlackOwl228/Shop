@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Оформление заказа{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Оформление заказа</h1>
+
+<form action="/front/checkout" method="post">
+    <div class="mb-3">
+        <label class="form-label">Адрес доставки</label>
+        <input type="text" name="address" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Комментарий</label>
+        <textarea name="comment" class="form-control"></textarea>
+    </div>
+
+    <button class="btn btn-primary">Подтвердить заказ</button>
+</form>
+{% endblock %}

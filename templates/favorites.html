@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Избранное{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Избранное</h1>
+
+{% if favorites %}
+<div class="row">
+    {% for item in favorites %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <img src="/static/{{ item.product.image }}" class="card-img-top" alt="{{ item.product.name }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ item.product.name }}</h5>
+                <p class="card-text">{{ item.product.price | int }} ₽</p>
+            </div>
+            <div class="card-footer">
+                <form action="/front/favorites/toggle/{{ item.product.id }}" method="post">
+                    <button class="btn btn-danger w-100">Удалить из избранного</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p>Список избранного пуст.</p>
+{% endif %}
+
+{% endblock %}

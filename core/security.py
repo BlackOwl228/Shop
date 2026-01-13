@@ -1,22 +1,27 @@
-from fastapi import Depends
+from fastapi import HTTPException, Request, Depends
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer
 
 from core import get_db, decode_access_token
-from services.checking import check_user_exists
-from models import User
+from .token.access import get_current_user_from_jwt
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-def get_current_user(token: str = Depends(oauth_scheme),
-                     db: Session = Depends(get_db)):
-    user_id = decode_access_token(token)
-    
-    user = db.query(User).filter(User.id == user_id).first()
+def get_current_user(
+    token: str = Depends(oauth_scheme),
+    db: Session = Depends(get_db),
+):
+    return get_current_user_from_jwt(token, db)
 
-    check_user_exists(user)
 
-    return user
+def get_current_user_cookie(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401)
+    return get_current_user_from_jwt(token, db)
 
 from passlib.context import CryptContext
 
