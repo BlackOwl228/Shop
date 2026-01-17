@@ -3,6 +3,7 @@ from googleapiclient.discovery import build
 import base64
 from email.mime.text import MIMEText
 import os
+from fastapi import BackgroundTasks
 #Для тестов
 #from dotenv import load_dotenv
 #load_dotenv()
@@ -25,8 +26,8 @@ def create_message(to_email: str, subject: str, body_text: str):
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
     return {'raw': raw}
 
-def send_message(to_email: str, subject: str, body_text: str):
+def send_message(to_email: str, token_id: str):
     service = get_gmail_service()
-    message = create_message(to_email, subject, body_text)
+    message = create_message(to_email, "Verify your email", f"Click: http://127.0.0.1:8000/auth/verify/{token_id}")
     sent_message = service.users().messages().send(userId='me', body=message).execute()
     return sent_message

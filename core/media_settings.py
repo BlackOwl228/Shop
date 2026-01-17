@@ -10,8 +10,6 @@ async def save_product_image(image: UploadFile, product_id: int):
                 break
             file_object.write(chunk)
 
-    return filename
-
 async def save_avatar(image: UploadFile, user_id: int):
     img_path = os.path.join("media", "avatar", str(user_id))
     ext = image.filename.split('.')[-1]
@@ -26,7 +24,7 @@ async def save_avatar(image: UploadFile, user_id: int):
     return filename
 
 import os
-PATH_TO_PROJECT = os.getenv("PATH_TO_PROJECT")
+PATH_TO_PROJECT = str(os.getenv("PATH_TO_PROJECT"))
 
 async def delete_image(dir: str, filename: str):
     full_path = os.path.join(PATH_TO_PROJECT, "media", dir, filename)

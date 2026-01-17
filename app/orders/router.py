@@ -1,5 +1,6 @@
 import stripe
 from decimal import Decimal
+from typing import List
 
 from fastapi import APIRouter, HTTPException, Path, Depends
 from fastapi.responses import JSONResponse
@@ -7,38 +8,38 @@ from sqlalchemy.orm import Session
 
 from core import get_db, get_current_user
 from models import User, Product, Order, OrderItem
-from schemas.order import CreatingOrderDTO, CreatingOrderResponse
-from services.pay_order import create_payment
+from .schemas import ProductItem, CreatingOrderResponse
+from .services import create_payment
 
 router = APIRouter(prefix='/orders', tags=["Order"])
 
 @router.post('', status_code=201, response_model=CreatingOrderResponse)
-def create_order(products: CreatingOrderDTO = Depends(),
+def create_order(products: List[ProductItem],
                  buyer: User = Depends(get_current_user),
                  db: Session = Depends(get_db)):
     
     order = Order(buyer_id=buyer.id)
     total_amount = 0
-    items_ids = [item[0] for item in products]
+    items_ids = [item.product_id for item in products]
     order_products = db.query(Product).filter(Product.id.in_(items_ids)).all()
     products_map = {p.id: p for p in order_products}
 
-    for item_id, quantity in products:
-        product = products_map.get(item_id)
+    for item in products:
+        product = products_map.get(item.product_id)
         if not product:
             continue
         
         order_item = OrderItem(
             product_id=product.id,
-            quantity=quantity,
+            quantity=item.quantity,
             unit_price=product.price)
 
         order.order_items.append(order_item)
-        total_amount += product.price * quantity
+        total_amount += product.price * item.quantity
 
     order.total_price = Decimal(total_amount)
-    order.payment_intent = create_payment(int(total_amount*100))
-
+    #order.payment_intent = create_payment(int(total_amount*100))
+    order.payment_intent = "sjfew3y42iq820RWEUIDOSXCI"
     db.add(order)
     db.commit()
 

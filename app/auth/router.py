@@ -1,22 +1,23 @@
 from datetime import datetime, timedelta, timezone
 import os, uuid
 
-from fastapi import APIRouter, HTTPException, Form, Depends, Path
+from fastapi import APIRouter, HTTPException,BackgroundTasks, Form, Depends, Path
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
 
 from core import get_db, hash_password, verify_password, create_access_token, create_refresh_token, delete_refresh_token, send_message
 from models import User, RefreshToken, EmailToken
-from schemas.auth import UserEmail, UserName, UserPassword, LoginResponse, RefreshResponse
+from .schemas import UserEmail, UserName, UserPassword, LoginResponse, RefreshResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 email_timedelta = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
 verify_email_time = datetime.now(timezone.utc) + timedelta(hours=email_timedelta)
 
-@router.post('/reg', status_code=204)
-def registration(name: str = UserName,
+@router.post('/reg', status_code=202)
+def registration(backgrond_tasks: BackgroundTasks,
+                 name: str = UserName,
                  email: str = UserEmail,
                  password: str = UserPassword,
                  db: Session = Depends(get_db)
@@ -40,7 +41,9 @@ def registration(name: str = UserName,
     db.add(token)
     db.commit()
 
-    send_message(user.email, "Verify your email", f"Click: http://localhost:8000/auth/verify/{token.id}")
+    backgrond_tasks.add_task(send_message, user.email, token.id)
+
+    return {"status": "created", "message": "Verify your email by magic link"}
 
 @router.post('/login', status_code=201, response_model=LoginResponse)
 def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
@@ -48,8 +51,8 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
                ):
     
     try:
-        email = UserEmail.model_validate(form_data.username)
-        password = UserPassword.model_validate(form_data.password)
+        email = UserEmail.model_validate({"email": form_data.username}).email
+        password = UserPassword.model_validate({"password": form_data.password}).password
     except ValidationError:
         raise HTTPException(status_code=422, detail="Incorrect data, try again")
 
@@ -59,7 +62,7 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
         raise HTTPException(status_code=401, detail="Wrong data, try again")
     
     return {"access_token": create_access_token(user.id),
-            "refresh_token": create_refresh_token(user.id),
+            "refresh_token": create_refresh_token(user.id, db),
             "token_type": "bearer"}
 
 @router.post('/verify/{token_id}', status_code=204)
@@ -85,7 +88,7 @@ def refresh_token(token: str = Form(...),
                   db: Session = Depends(get_db)):
     
     refresh_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
-    if refresh_token:
+    if not refresh_token:
         raise HTTPException(status_code=401, detail="Wrong token, login again")
     
     return {"access_token": create_access_token(refresh_token.user_id)}

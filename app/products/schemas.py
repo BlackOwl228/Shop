@@ -1,5 +1,4 @@
 from decimal import Decimal
-
 from pydantic import BaseModel, Field
 
 class CreatingProductDTO(BaseModel):

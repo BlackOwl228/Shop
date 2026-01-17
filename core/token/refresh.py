@@ -11,7 +11,7 @@ RefreshTokenExpireDays = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 def create_refresh_token(user_id: int,
                          db: Session
                          ) -> str:
-    token = secrets.token_hex(64)
+    token = secrets.token_hex(32)
     expires_at = datetime.now(timezone.utc) + timedelta(days=RefreshTokenExpireDays)
     new_token = RefreshToken(token=token, user_id=user_id, expires_at=expires_at)
     db.add(new_token)

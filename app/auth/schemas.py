@@ -7,7 +7,7 @@ class UserEmail(BaseModel):
     email: EmailStr
 
 class UserPassword(BaseModel):
-    password: str = Field(min_length=6, max_length=128)
+    password: str = Field(min_length=5, max_length=128)
 
 class LoginResponse(BaseModel):
     access_token: str
