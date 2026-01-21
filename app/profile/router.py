@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, UploadFile, Depends, Form, File
+import os
+
+from fastapi import APIRouter, HTTPException, UploadFile, BackgroundTasks, Depends, Form, File
 from sqlalchemy.orm import Session
 
-from core import get_db, get_current_user, verify_password, hash_password, save_avatar, delete_image
-from ..products.services import product_by_id
-from models import User, Product
+from core import get_db, get_current_user, verify_password, hash_password, save_avatar
+from ..cart.services import product_by_id
+from models import User, Product, Seller
 from ..auth.schemas import UserName, UserPassword
 
 router = APIRouter(prefix='/me', tags=["Profile"])
@@ -25,12 +27,18 @@ def change_name(new_name: str = UserName,
     return {"status": "Name was changed", "new_name": user.name}
 
 @router.patch('/avatar', status_code=202)
-async def change_avatar(new_avatar: UploadFile = File(..., max_length=15 *1024*1024, media_type=['image/png', 'image/jpeg']),
+async def change_avatar(background_tasks: BackgroundTasks,
+                        avatar: UploadFile = File(..., max_length=15 *1024*1024, media_type=['image/png', 'image/jpeg']),
                         user: User = Depends(get_current_user),
                         db: Session = Depends(get_db)):
     
-    if user.avatar: await delete_image("avatar", user.avatar)
-    user.avatar = await save_avatar(new_avatar, user.id)
+    image_bytes = await avatar.read()
+
+    img_path = os.path.join("media", "product", str(user.id))
+    ext = avatar.filename.split('.')[-1]
+    user.avatar = f"{img_path}.{ext}"  
+
+    background_tasks.add_task(save_avatar, image_bytes, avatar.filename, user.id)
 
     db.commit()
 
@@ -53,33 +61,23 @@ def change_password(password: str = UserPassword,
 def get_my_orders(user: User = Depends(get_current_user)):
     return user.orders
 
-@router.post('/cart/{product_id}', status_code=204)
-def add_product_to_cart(product: Product = Depends(product_by_id),
-                        user: User = Depends(get_current_user),
-                        db: Session = Depends(get_db)):
-    
-    if product in user.cart_products:
-        raise HTTPException(status_code=400, detail="Product already in cart")
-    
-    user.cart_products.append(product)
 
+@router.post('/seller-request', status_code=201)
+def create_seller_request(company_name: str = Form(..., max_length=128),
+                          user: User = Depends(get_current_user),
+                          db: Session = Depends(get_db)):
+    
+    old_request = db.query(Seller).filter(Seller.user_id == user.id).first()
+    if old_request:
+        raise HTTPException(status_code=400, detail="request is already exists")
+
+    request = Seller(user_id=user.id,
+                     company_name=company_name)
+    db.add(request)
     db.commit()
 
-@router.get('/cart', status_code=200)
-def get_my_cart(user: User = Depends(get_current_user)):
-    return user.cart_products
+    return {"status": "Request was created, wait for approve"}
 
-@router.delete('/cart/{product_id}', status_code=204)
-def remove_product_from_cart(product: Product = Depends(product_by_id),
-                             user: User = Depends(get_current_user),
-                             db: Session = Depends(get_db)):
-    
-    if product not in user.cart_products:
-        raise HTTPException(status_code=404, detail="Product not in cart")
-    
-    user.cart_products.remove(product)
-
-    db.commit()
 
 @router.post('/favorites/{product_id}', status_code=204)
 def add_product_to_favorites(product: Product = Depends(product_by_id),

@@ -1,34 +1,29 @@
-from fastapi import UploadFile
-async def save_product_image(image: UploadFile, product_id: int):
+def save_product_image(image_bytes: bytes, filename: str, product_id: int):
+
     img_path = os.path.join("media", "product", str(product_id))
-    ext = image.filename.split('.')[-1]
-    filename = f"{img_path}.{ext}"
-    with open(filename, "wb") as file_object:
-        while True:
-            chunk = await image.read(1024)
-            if not chunk:
-                break
-            file_object.write(chunk)
 
-async def save_avatar(image: UploadFile, user_id: int):
+    ext = filename.split('.')[-1]
+    full_path = f"{img_path}.{ext}"
+
+    with open(full_path, "wb") as f:
+        f.write(image_bytes)
+
+
+def save_avatar(image_bytes: bytes, filename: str, user_id: int):
+
     img_path = os.path.join("media", "avatar", str(user_id))
-    ext = image.filename.split('.')[-1]
-    filename = f"{img_path}.{ext}"
-    with open(filename, "wb") as file_object:
-        while True:
-            chunk = await image.read(1024)
-            if not chunk:
-                break
-            file_object.write(chunk)
 
-    return filename
+    ext = filename.split('.')[-1]
+    full_path = f"{img_path}.{ext}"
+
+    with open(full_path, "wb") as f:
+        f.write(image_bytes)
+        
 
 import os
 PATH_TO_PROJECT = str(os.getenv("PATH_TO_PROJECT"))
 
-async def delete_image(dir: str, filename: str):
+def delete_image(dir: str, filename: str):
     full_path = os.path.join(PATH_TO_PROJECT, "media", dir, filename)
     if os.path.exists(full_path):
-        await os.remove(full_path)
-        return True
-    return False
+        os.remove(full_path)

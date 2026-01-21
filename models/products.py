@@ -10,13 +10,15 @@ class Product(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
+    stock = Column(Integer, default=0)
     rating = Column(Float, default=0.0, nullable=False)
     description = Column(Text, nullable=True)
     image = Column(String(128), nullable=True)
-    seller_id = Column(ForeignKey("users.id"), nullable=False)
+    seller_id = Column(ForeignKey("sellers.id"), nullable=False)
+    status = Column(String(20), default="active")
     created_at = Column(DateTime, default=func.now())
 
-    seller = relationship("User")
+    seller = relationship("Seller")
     order_items = relationship("OrderItem", back_populates="product")
     
     in_cart_user = relationship("User", secondary=cart, back_populates="cart_products")

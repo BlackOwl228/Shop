@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from core import get_db
 from .schemas import OrderingParam, SortingProducts, SearchingProduct, ProductsMap
 from models import Product
+from domain.product_rules import available_products
 
 router = APIRouter(tags=["Search"])
 
@@ -18,7 +19,7 @@ def search_products(name: str | None = Query(None, example="Keyboard"),
                     page: int = Query(ge=1, default=1),
                     db: Session = Depends(get_db)):
     
-    query = db.query(Product)
+    query = available_products(db.query(Product))
 
     if name is not None:
         query = query.filter(Product.name.ilike(f"%{name}%"))

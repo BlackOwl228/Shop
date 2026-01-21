@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from core.db import Base
-from models import User, Product, Order, OrderItem, RefreshToken, cart, favorites
+from models import User, Seller, Product, Order, OrderItem, RefreshToken, cart, favorites
 target_metadata = Base.metadata
 
 database_url = os.getenv("DATABASE_URL")

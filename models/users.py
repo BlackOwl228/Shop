@@ -1,5 +1,5 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy import String, Integer, Boolean, Column, DateTime, func
+from sqlalchemy import String, Integer, Boolean, Column, DateTime, ForeignKey, func
 
 from core.db import Base
 from models import cart, favorites
@@ -14,9 +14,26 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     avatar = Column(String(128), nullable=True)
     created_at = Column(DateTime, default=func.now())
+    is_admin = Column(Boolean, default=False)
 
     email_token = relationship("EmailToken", back_populates="user", uselist=False)
     tokens = relationship("RefreshToken", back_populates="user")
     orders = relationship("Order", back_populates="user")
     cart_products = relationship("Product", secondary=cart, back_populates="in_cart_user")
     favorite_products = relationship("Product", secondary=favorites, back_populates="favorited_by_user")
+
+    seller = relationship("Seller", back_populates="user", uselist=False)
+    admin = relationship("Seller", back_populates="user", uselist=False)
+
+class Seller(Base):
+    __tablename__ = "sellers"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    company_name = Column(String(128), nullable=False)
+    status = Column(String(20), default="pending")
+
+    created_at = Column(DateTime, default=func.now())
+    verified_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="seller")

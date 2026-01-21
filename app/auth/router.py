@@ -65,6 +65,12 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
             "refresh_token": create_refresh_token(user.id, db),
             "token_type": "bearer"}
 
+@router.delete('/logout', status_code=204)
+def logout_user(token: str = Form(...),
+                db: Session = Depends(get_db)
+                ):
+    delete_refresh_token(token)
+
 @router.post('/verify/{token_id}', status_code=204)
 def verify_email(token_id: str = Path(..., ge=1),
                  db: Session = Depends(get_db)):
@@ -92,9 +98,3 @@ def refresh_token(token: str = Form(...),
         raise HTTPException(status_code=401, detail="Wrong token, login again")
     
     return {"access_token": create_access_token(refresh_token.user_id)}
-
-@router.delete('/logout', status_code=204)
-def logout_user(token: str = Form(...),
-                db: Session = Depends(get_db)
-                ):
-    delete_refresh_token(token)

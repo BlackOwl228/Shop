@@ -2,8 +2,8 @@ from fastapi import HTTPException, Request, Depends
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer
 
-from core import get_db, decode_access_token
-from .token.access import get_current_user_from_jwt
+from core import get_db
+from .token.access import get_current_user_from_jwt, get_seller_from_jwt
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -13,6 +13,11 @@ def get_current_user(
 ):
     return get_current_user_from_jwt(token, db)
 
+def get_current_seller(
+    token: str = Depends(oauth_scheme),
+    db: Session = Depends(get_db),
+):
+    return get_seller_from_jwt(token, db)
 
 def get_current_user_cookie(
     request: Request,

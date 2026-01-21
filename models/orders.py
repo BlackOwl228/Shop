@@ -7,7 +7,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True)
-    buyer_id = Column(Integer, ForeignKey("users.id"))
+    buyer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     total_price = Column(Numeric(10, 2), nullable=False, default=0)
     status = Column(String, default="pending")
     payment_intent = Column(String, nullable=False)

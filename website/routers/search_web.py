@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from core import get_db
 from models import Product
-from services.search import _search_products
-from schemas.searching import OrderingParam, SortingProducts
+from app.search.schemas import OrderingParam, SortingProducts, ProductsMap
+from domain.product_rules import available_products
 from core.utils import templates
 
 router = APIRouter(prefix='/front', tags=["FOR WEBSITE"])
@@ -42,4 +42,25 @@ def advanced_search(name: str | None = Query(None),
                     order: OrderingParam = Query("asc"),
                     page: int = Query(ge=1, default=1),
                     db: Session = Depends(get_db)):
-    return _search_products(name, price_from, price_to, seller_id, sort, order, page, Session)
+    query = available_products(db.query(Product))
+
+    if name is not None:
+        query = query.filter(Product.name.ilike(f"%{name}%"))
+
+    if price_from is not None:
+        query = query.filter(Product.price >= price_from)
+
+    if price_to is not None:
+        query = query.filter(Product.price <= price_to)
+
+    if seller_id is not None:
+        query = query.filter(Product.seller_id == seller_id)
+
+    column = ProductsMap[sort]
+    query = query.order_by(column.desc() if order == OrderingParam.desc else column.asc())
+
+    query = query.limit(50).offset(50*(page-1))
+    result = query.all()
+
+    if result: return result
+    else: return None

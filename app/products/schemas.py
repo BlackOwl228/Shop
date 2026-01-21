@@ -18,6 +18,7 @@ class PatchingProductDTO(BaseModel):
 class GettingProductResponse(BaseModel):
     name: str = Field(..., example="AirPods 2")
     price: float = Field(..., ge=1, example=15500)
+    stock: int = Field(..., ge=0)
     rating: float = Field(..., ge=0, le=5, example=4.8)
     description: str | None = Field(example="Телефон от лучшего производителя смартфонов Apple")
     image: str | None = Field(example="123.png")
