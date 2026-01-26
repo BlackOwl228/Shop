@@ -1,25 +1,40 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy import String, Text, ForeignKey, Numeric, Integer, Float, Column, DateTime, func
+from sqlalchemy import String, Text, ForeignKey, Numeric, Integer, Float, Column, DateTime, func, CheckConstraint
 
 from core.db import Base
-from models import cart, favorites
+from models import favorites
 
 class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    price = Column(Numeric(10, 2), nullable=False)
-    stock = Column(Integer, default=0)
+    name = Column(String(255), nullable=False) 
     rating = Column(Float, default=0.0, nullable=False)
+    reviews_count = Column(Integer, default=0, nullable=False)
     description = Column(Text, nullable=True)
-    image = Column(String(128), nullable=True)
     seller_id = Column(ForeignKey("sellers.id"), nullable=False)
+    category_id = Column(ForeignKey("categories.id"))
     status = Column(String(20), default="active")
     created_at = Column(DateTime, default=func.now())
 
-    seller = relationship("Seller")
-    order_items = relationship("OrderItem", back_populates="product")
-    
-    in_cart_user = relationship("User", secondary=cart, back_populates="cart_products")
+    variants = relationship("ProductVariant", back_populates="product")
+    category = relationship("Category", back_populates="products")
+    seller = relationship("Seller", back_populates="products")
+    reviews = relationship("Review", back_populates="product")
     favorited_by_user = relationship("User", secondary=favorites, back_populates="favorite_products")
+
+class ProductVariant(Base):
+    __tablename__ = "product_variants"
+
+    id = Column(Integer, primary_key=True)
+    product_id = Column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
+    name = Column(String(32), nullable=False)
+    stock = Column(Integer, nullable=False, default=0)
+    image = Column(String(128), nullable=True)
+
+    product = relationship("Product", back_populates="variants")
+    order_items = relationship("OrderItem", back_populates="product_variant")
+    cart_items = relationship("CartItem", back_populates="variant")
+
+    CheckConstraint("stock >= 0", name="ck_variant_stock_non_negative")

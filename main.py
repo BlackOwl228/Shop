@@ -15,6 +15,8 @@ from app.profile import router as profile
 from app.search import router as search
 from app.cart import router as cart
 from app.admin import router as admin
+from app.category import router as category
+from app.review import router as review
 
 app.include_router(auth.router)
 app.include_router(orders.router)
@@ -23,6 +25,8 @@ app.include_router(profile.router)
 app.include_router(search.router)
 app.include_router(cart.router)
 app.include_router(admin.router)
+app.include_router(category.router)
+app.include_router(review.router)
 
 #Роутеры для сайта
 from website.routers import home_web, profile_web, auth_web, cart_web, checkout_web, search_web

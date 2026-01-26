@@ -1,25 +1,23 @@
 from decimal import Decimal
-from pydantic import BaseModel, Field
+from typing import List
+from pydantic import BaseModel, Field, ConfigDict
 
-class CreatingProductDTO(BaseModel):
-    name: str = Field(..., min_length=3, max_length=255, example="IPhone 16 Pro")
-    description: str | None = Field(None, max_length=500, example="Телефон от лучшего производителя смартфонов Apple")
-    price: Decimal = Field(..., ge=1, example=54990)
+class ProductPesponse(BaseModel):
+    name: str
+    rating: float = Field(..., ge=0, le=5)
+    description: str | None
+    seller_id: int
 
-class CreatingProductResponse(BaseModel):
-    status: str = Field(..., max_length=30, example="created")
-    product_id: int = Field(..., example=101)
+    model_config = ConfigDict(from_attributes=True)
 
-class PatchingProductDTO(BaseModel):
-    name: str | None = Field(None, min_length=3, max_length=255, example="IPhone 17 Pro")
-    description: str | None = Field(None, max_length=500, example="Телефон от лучшего производителя смартфонов Apple")
-    price: Decimal | None = Field(None, ge=1, example=64990)
+class VariantResponse(BaseModel):
+    id: int
+    price: Decimal = Field(..., gt=0)
+    stock: int
+    image: str | None
 
-class GettingProductResponse(BaseModel):
-    name: str = Field(..., example="AirPods 2")
-    price: float = Field(..., ge=1, example=15500)
-    stock: int = Field(..., ge=0)
-    rating: float = Field(..., ge=0, le=5, example=4.8)
-    description: str | None = Field(example="Телефон от лучшего производителя смартфонов Apple")
-    image: str | None = Field(example="123.png")
-    seller_id: int = Field(..., example=42)
+    model_config = ConfigDict(from_attributes=True)
+
+class ProductCartResponse(BaseModel):
+    product: ProductPesponse
+    variants: List[VariantResponse]

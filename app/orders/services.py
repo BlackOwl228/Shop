@@ -17,35 +17,36 @@ from models import Product, Order, OrderItem
 from .schemas import ProductItem
 
 def validate_order(products: List[ProductItem],
-                   products_map: Dict[int, Product]):
-    
+                   variants_map: Dict[int, Product]):
     for item in products:
-        product = products_map.get(item.product_id)
-        if not product:
-            raise HTTPException(status_code=400, detail="Product unavailable now")
-        
-        if product.price != item.client_price:
+        variant = variants_map.get(item.variant_id)
+
+        if not variant:
+            raise HTTPException(status_code=400, detail="Variant unavailable")
+
+        if variant.price != item.client_price:
             raise HTTPException(status_code=400, detail="Price was changed")
-        
-        if product.stock >= item.quantity:
-            raise HTTPException(status_code=400, detail=f"Product {product.id} out of stock")
+
+        if variant.stock < item.quantity:
+            raise HTTPException(status_code=400, detail=f"Variant {variant.id} out of stock")
 
 def add_products(products: List[ProductItem],
-                 products_map: Dict[int, Product],
+                 variants_map: Dict[int, Product],
                  order: Order):
-
-    total_amount = 0
+    total = Decimal(0)
     for item in products:
-        product = products_map.get(item.product_id)
+        variant = variants_map[item.variant_id]
         
         order_item = OrderItem(
-            product_id=product.id,
+            variant_id=variant.id,
             quantity=item.quantity,
-            unit_price=product.price)
-
+            unit_price=variant.price,
+        )
         order.order_items.append(order_item)
-        total_amount += Decimal(product.price) * item.quantity
+        total += variant.price * item.quantity
 
-    order.total_price = Decimal(total_amount)
+        variant.stock -= item.quantity
+
+    order.total_price = total
 
     return order

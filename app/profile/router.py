@@ -1,10 +1,9 @@
 import os
 
-from fastapi import APIRouter, HTTPException, UploadFile, BackgroundTasks, Depends, Form, File
+from fastapi import APIRouter, HTTPException, UploadFile, BackgroundTasks, Depends, Form, File, Path
 from sqlalchemy.orm import Session
 
-from core import get_db, get_current_user, verify_password, hash_password, save_avatar
-from ..cart.services import product_by_id
+from core import get_db, get_current_user, verify_password, hash_password, save_image
 from models import User, Product, Seller
 from ..auth.schemas import UserName, UserPassword
 
@@ -28,17 +27,16 @@ def change_name(new_name: str = UserName,
 
 @router.patch('/avatar', status_code=202)
 async def change_avatar(background_tasks: BackgroundTasks,
-                        avatar: UploadFile = File(..., max_length=15 *1024*1024, media_type=['image/png', 'image/jpeg']),
+                        image: UploadFile = File(..., max_length=15 *1024*1024, media_type=['image/png', 'image/jpeg']),
                         user: User = Depends(get_current_user),
                         db: Session = Depends(get_db)):
-    
-    image_bytes = await avatar.read()
 
-    img_path = os.path.join("media", "product", str(user.id))
-    ext = avatar.filename.split('.')[-1]
-    user.avatar = f"{img_path}.{ext}"  
+    img_path = os.path.join("media", "avatar", str(user.id))
+    ext = image.filename.split('.')[-1]
+    path = f"{img_path}.{ext}"
+    user.avatar = path 
 
-    background_tasks.add_task(save_avatar, image_bytes, avatar.filename, user.id)
+    background_tasks.add_task(save_image, image, path)
 
     db.commit()
 
@@ -80,9 +78,12 @@ def create_seller_request(company_name: str = Form(..., max_length=128),
 
 
 @router.post('/favorites/{product_id}', status_code=204)
-def add_product_to_favorites(product: Product = Depends(product_by_id),
+def add_product_to_favorites(product_id: int = Path(...),
                              user: User = Depends(get_current_user),
                              db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
     
     if product in user.favorite_products:
         raise HTTPException(status_code=400, detail="Product already in favorites")
@@ -96,9 +97,12 @@ def get_my_favorites(user: User = Depends(get_current_user)):
     return user.favorite_products
 
 @router.delete('/favorites/{product_id}', status_code=204)
-def remove_product_from_favorites(product: Product = Depends(product_by_id),
+def remove_product_from_favorites(product_id: int = Path(...),
                                   user: User = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
     
     if product not in user.favorite_products:
         raise HTTPException(status_code=404, detail="Product not in favorites")

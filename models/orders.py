@@ -20,11 +20,11 @@ class OrderItem(Base):
     __tablename__ = "order_items"
 
     id = Column(Integer, primary_key=True)
-    order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"))
-    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"))
+    order_id = Column(ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
+    variant_id = Column(ForeignKey("product_variants.id"), nullable=False)
 
     quantity = Column(Integer, default=1, nullable=False)
     unit_price = Column(Numeric(10, 2), nullable=False)
 
     order = relationship("Order", back_populates="order_items")
-    product = relationship("Product", back_populates="order_items")
+    product_variant = relationship("ProductVariant", back_populates="order_items")

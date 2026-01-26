@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from core import get_db, get_current_user
-from models import User, Product, Order
+from models import User, Seller, Product, ProductVariant, Order
 from .schemas import ProductItem, CreatingOrderResponse
 from .services import create_payment, validate_order, add_products
 from domain.product_rules import available_products
@@ -18,15 +18,16 @@ router = APIRouter(prefix='/orders', tags=["Order"])
 def create_order(products: List[ProductItem],
                  buyer: User = Depends(get_current_user),
                  db: Session = Depends(get_db)):
-    
-    items_ids = [item.product_id for item in products]
+    variant_ids = [item.variant_id for item in products]
 
-    order_products = available_products(db.query(Product)).filter(Product.id.in_(items_ids)).all()
-    products_map = {p.id: p for p in order_products}
+    variants = (available_products(db.query(ProductVariant))
+                .filter(ProductVariant.id.in_(variant_ids))
+                .all()
+                )
+    variants_map = {v.id: v for v in variants}
+    validate_order(products, variants_map)
 
-    validate_order(products, products_map)
-
-    order = add_products(products, products_map, Order(buyer_id=buyer.id))
+    order = add_products(products, variants_map, Order(buyer_id=buyer.id))
 
     #order.payment_intent = create_payment(int(total_amount*100))
     #ВРЕМЕННАЯ ЗАМЕНА СТРАЙП

@@ -2,13 +2,15 @@ from fastapi import APIRouter, HTTPException, Depends, Path, Form
 from sqlalchemy.orm import Session
 
 from core import get_db
-from models import Product, Order, Seller
+from core.security import get_current_admin
+from models import User, Product, Order, Seller, Review, Category
 from domain import ProductStatus, SellerStatus, OrderStatus
 
 router = APIRouter(prefix='/admin', tags=["Admin"])
 
 @router.delete('/products/{product_id}/block')
 def block_products(product_id: int = Path(...),
+                   admin: User = Depends(get_current_admin),
                    db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
@@ -21,7 +23,8 @@ def block_products(product_id: int = Path(...),
 
 @router.patch('/products/{product_id}/unblock')
 def unblock_products(product_id: int = Path(...),
-                   db: Session = Depends(get_db)):
+                     admin: User = Depends(get_current_admin),
+                     db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -34,6 +37,7 @@ def unblock_products(product_id: int = Path(...),
 
 @router.post('/sellers/{seller_id}')
 def approve_seller_request(seller_id: int = Path(...),
+                           admin: User = Depends(get_current_admin),
                            db: Session = Depends(get_db)):
     request = db.query(Seller).filter(Seller.id == seller_id).first()
     if not request:
@@ -48,6 +52,7 @@ def approve_seller_request(seller_id: int = Path(...),
 
 @router.delete('/sellers/{seller_id}')
 def suspend_seller(seller_id: int = Path(...),
+                   admin: User = Depends(get_current_admin),
                    db: Session = Depends(get_db)):
     seller = db.query(Seller).filter(Seller.id == seller_id).first()
     if not seller:
@@ -63,6 +68,7 @@ def suspend_seller(seller_id: int = Path(...),
 
 @router.patch('/orders/{order_id}/complete')
 def complete_order(order_id: int = Path(...),
+                   admin: User = Depends(get_current_admin),
                    db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -75,6 +81,7 @@ def complete_order(order_id: int = Path(...),
 
 @router.patch('/orders/{order_id}/cancel')
 def cancel_order(order_id: int = Path(...),
+                 admin: User = Depends(get_current_admin),
                  db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -83,4 +90,37 @@ def cancel_order(order_id: int = Path(...),
         return {"status": "Order already paid you cannot cancel it"}
     
     order.status = OrderStatus.CANCELLED
+    db.commit()
+
+
+@router.delete('/reviews/{review_id}')
+def delete_review(review_id: int = Path(...),
+                  admin: User = Depends(get_current_admin),
+                  db: Session = Depends(get_db)):
+    review = db.query(Review).filter(Review.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    db.delete(review)
+    db.commit()
+
+@router.post('/categories')
+def make_category(name: str,
+                  admin: User = Depends(get_current_admin),
+                  db: Session = Depends(get_db)):
+    db.add(Category(name=name))
+    db.commit()
+    return{"status": "created"}
+
+@router.post('/products/{product_id}/categories/{category_id}')
+def add_product_to_category(product_id: int = Path(...),
+                            category_id: int = Path(...),
+                            admin: User = Depends(get_current_admin),
+                            db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    product.category=category
     db.commit()

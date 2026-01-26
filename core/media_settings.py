@@ -1,29 +1,15 @@
-def save_product_image(image_bytes: bytes, filename: str, product_id: int):
+from fastapi import UploadFile
 
-    img_path = os.path.join("media", "product", str(product_id))
-
-    ext = filename.split('.')[-1]
-    full_path = f"{img_path}.{ext}"
-
-    with open(full_path, "wb") as f:
-        f.write(image_bytes)
-
-
-def save_avatar(image_bytes: bytes, filename: str, user_id: int):
-
-    img_path = os.path.join("media", "avatar", str(user_id))
-
-    ext = filename.split('.')[-1]
-    full_path = f"{img_path}.{ext}"
-
-    with open(full_path, "wb") as f:
-        f.write(image_bytes)
-        
+async def save_image(image: UploadFile, path: str):
+    image.file.seek(0)
+    with open(path, "wb") as f:
+        while chunk := image.file.read(1024 * 1024):
+            f.write(chunk)
 
 import os
 PATH_TO_PROJECT = str(os.getenv("PATH_TO_PROJECT"))
 
-def delete_image(dir: str, filename: str):
-    full_path = os.path.join(PATH_TO_PROJECT, "media", dir, filename)
+def delete_image(path: str):
+    full_path = os.path.join(PATH_TO_PROJECT, path)
     if os.path.exists(full_path):
         os.remove(full_path)

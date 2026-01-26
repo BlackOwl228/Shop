@@ -49,3 +49,10 @@ def get_seller_from_jwt(token: str, db: Session):
     if not user or not user.seller:
         raise HTTPException(status_code=403, detail="User is not a seller")
     return user.seller
+
+def get_admin_from_jwt(token: str, db: Session):
+    user_id = decode_access_token(token)
+    admin = db.query(User).filter(User.id==user_id, User.is_admin==True).first()
+    if not admin:
+        raise HTTPException(status_code=401, detail="You aren't admin")
+    return admin

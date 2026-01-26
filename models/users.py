@@ -2,7 +2,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import String, Integer, Boolean, Column, DateTime, ForeignKey, func
 
 from core.db import Base
-from models import cart, favorites
+from models import favorites
 
 class User(Base):
     __tablename__ = "users"
@@ -19,8 +19,9 @@ class User(Base):
     email_token = relationship("EmailToken", back_populates="user", uselist=False)
     tokens = relationship("RefreshToken", back_populates="user")
     orders = relationship("Order", back_populates="user")
-    cart_products = relationship("Product", secondary=cart, back_populates="in_cart_user")
+    cart_items = relationship("CartItem", back_populates="user")
     favorite_products = relationship("Product", secondary=favorites, back_populates="favorited_by_user")
+    reviews = relationship("Review", back_populates="author")
 
     seller = relationship("Seller", back_populates="user", uselist=False)
     admin = relationship("Seller", back_populates="user", uselist=False)
@@ -37,3 +38,4 @@ class Seller(Base):
     verified_at = Column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="seller")
+    products = relationship("Product", back_populates="seller")

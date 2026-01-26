@@ -1,60 +1,80 @@
-from typing import List
+from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Depends, Path, Form
 from sqlalchemy.orm import Session
-from sqlalchemy import update
 
 from core.security import get_db, get_current_user
-from models import User, Product, cart
-from .services import product_by_id
-from ..search.schemas import SearchingProduct
+from domain.product_rules import available_products
+from models import User, ProductVariant, CartItem
+from .schemas import CartResponse
 
-router = APIRouter(prefix='/cart', tags=["Cart"])
+router = APIRouter(tags=["Cart"])
 
-@router.post('/cart/{product_id}', status_code=204)
-def add_product_to_cart(product: Product = Depends(product_by_id),
+@router.post('/cart/{variant_id}', status_code=204)
+def add_product_to_cart(variant_id: int = Path(...),
+                        quantity: int = Form(1, ge=1),
                         user: User = Depends(get_current_user),
                         db: Session = Depends(get_db)):
+    variant = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
+    if not variant:
+        raise HTTPException(status_code=404, detail="Product not found")
     
-    if product in user.cart_products:
+    if variant in user.cart_items:
         raise HTTPException(status_code=400, detail="Product already in cart")
     
-    user.cart_products.append(product)
-
+    item = CartItem(user_id=user.id, variant_id=variant_id, quantity=quantity)
+    db.add(item)
     db.commit()
 
-@router.get('/cart', status_code=200, response_model=List[SearchingProduct])
-def get_my_cart(user: User = Depends(get_current_user)):
-    return user.cart_products
+@router.get('/cart', status_code=200, response_model=CartResponse)
+def get_my_cart(user: User = Depends(get_current_user),
+                db: Session = Depends(get_db)):
+    items = (
+        available_products(db.query(CartItem).join(ProductVariant))
+        .filter(CartItem.user_id == user.id)
+        .all()
+    )
 
-@router.patch('/cart/{product_id}', status_code=204)
-def change_quantity(product_id: int = Path(..., ge=0),
+    total = Decimal(0)
+    result = []
+
+    for item in items:
+        subtotal = item.variant.price * item.quantity
+        total += subtotal
+
+        result.append({
+            "variant": item.variant,
+            "quantity": item.quantity,
+            "subtotal": subtotal
+        })
+
+    return {
+        "items": result,
+        "total_price": total
+    }
+
+
+@router.patch('/cart/{variant_id}', status_code=204)
+def change_quantity(variant_id: int = Path(...),
                     quantity: int = Form(..., gt=0),
                     user: User = Depends(get_current_user),
                     db: Session = Depends(get_db)):
-    stmt = (
-        update(cart)
-        .where(
-            cart.c.user == user.id,
-            cart.c.product == product_id
-        )
-        .values(quantity=quantity)
-    )
-
-    result = db.execute(stmt)
-
-    if result.rowcount == 0:
-        raise HTTPException(status_code=404, detail="Product not in cart")
+    item = db.query(CartItem).filter(CartItem.user_id == user.id,
+                                     CartItem.variant_id == variant_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not in cart")
+    
+    item.quantity = quantity
     db.commit()
 
-@router.delete('/cart/{product_id}', status_code=204)
-def remove_product_from_cart(product: Product = Depends(product_by_id),
+@router.delete('/cart/{variant_id}', status_code=204)
+def remove_product_from_cart(variant_id: int = Path(...),
                              user: User = Depends(get_current_user),
                              db: Session = Depends(get_db)):
+    item = db.query(CartItem).filter(CartItem.user_id == user.id,
+                                     CartItem.variant_id == variant_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not in cart")
     
-    if product not in user.cart_products:
-        raise HTTPException(status_code=404, detail="Product not in cart")
-    
-    user.cart_products.remove(product)
-
+    db.delete(item)
     db.commit()
