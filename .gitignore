@@ -13,7 +13,6 @@ eggs/
 # Virtual environment
 venv/
 .venv/
-env/
 .env
 .env.docker
 
