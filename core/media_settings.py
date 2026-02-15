@@ -7,9 +7,8 @@ async def save_image(image: UploadFile, path: str):
             f.write(chunk)
 
 import os
-PATH_TO_PROJECT = str(os.getenv("PATH_TO_PROJECT"))
 
 def delete_image(path: str):
-    full_path = os.path.join(PATH_TO_PROJECT, path)
+    full_path = os.path.join(os.getcwd(), path)
     if os.path.exists(full_path):
         os.remove(full_path)

@@ -10,16 +10,16 @@ from core import get_db, hash_password, verify_password, create_access_token, cr
 from models import User, RefreshToken, EmailToken
 from .schemas import UserEmail, UserName, UserPassword, LoginResponse, RefreshResponse
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(tags=["Auth"])
 
 email_timedelta = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
 verify_email_time = datetime.now(timezone.utc) + timedelta(hours=email_timedelta)
 
 @router.post('/reg', status_code=202)
 def registration(backgrond_tasks: BackgroundTasks,
-                 name: str = UserName,
-                 email: str = UserEmail,
-                 password: str = UserPassword,
+                 name: UserName = Form(...),
+                 email: UserEmail = Form(...),
+                 password: UserPassword = Form(...),
                  db: Session = Depends(get_db)
                  ):
     
@@ -41,7 +41,7 @@ def registration(backgrond_tasks: BackgroundTasks,
     db.add(token)
     db.commit()
 
-    backgrond_tasks.add_task(send_message, user.email, token.id)
+    #backgrond_tasks.add_task(send_message, user.email, token.id)
 
     return {"status": "created", "message": "Verify your email by magic link"}
 
@@ -49,7 +49,6 @@ def registration(backgrond_tasks: BackgroundTasks,
 def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
                db: Session = Depends(get_db)
                ):
-    
     try:
         email = UserEmail.model_validate({"email": form_data.username}).email
         password = UserPassword.model_validate({"password": form_data.password}).password
@@ -69,7 +68,7 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
 def logout_user(token: str = Form(...),
                 db: Session = Depends(get_db)
                 ):
-    delete_refresh_token(token)
+    delete_refresh_token(token, db)
 
 @router.post('/verify/{token_id}', status_code=204)
 def verify_email(token_id: str = Path(..., ge=1),

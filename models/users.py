@@ -24,7 +24,6 @@ class User(Base):
     reviews = relationship("Review", back_populates="author")
 
     seller = relationship("Seller", back_populates="user", uselist=False)
-    admin = relationship("Seller", back_populates="user", uselist=False)
 
 class Seller(Base):
     __tablename__ = "sellers"

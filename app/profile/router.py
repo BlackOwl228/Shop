@@ -11,10 +11,10 @@ router = APIRouter(prefix='/me', tags=["Profile"])
 
 @router.get('', status_code=200)
 def get_profile(user: User = Depends(get_current_user)):
-    return user.name, user.email, user.email_verified, user.avatar, user.created_at
+    return user.name, user.email, user.email_verified, user.avatar, user.created_at, user.is_admin
 
 @router.patch('/name', status_code=200)
-def change_name(new_name: str = UserName,
+def change_name(new_name: UserName = Form(...),
                 user: User = Depends(get_current_user),
                 db: Session = Depends(get_db)):
     
@@ -41,15 +41,17 @@ async def change_avatar(background_tasks: BackgroundTasks,
     db.commit()
 
 @router.patch('/password', status_code=200)
-def change_password(password: str = UserPassword,
-                    new_password: str = UserPassword,
+def change_password(password: UserPassword = Form(...),
+                    new_password: UserPassword = Form(...),
                     user: User = Depends(get_current_user),
                     db: Session = Depends(get_db)):
-    
-    if not verify_password(password, user.hash):
+    if password == new_password:
+        return {"status": "Passwords match"}
+
+    if not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect password")
     
-    user.hash = hash_password(new_password)
+    user.hashed_password = hash_password(new_password)
 
     db.commit()
 

@@ -13,7 +13,7 @@ from ..search.schemas import OrderingParam
 
 router = APIRouter(tags=["Review"])
 
-@router.post('/products/{product_id}/reviews')
+@router.post('/products/{product_id}/reviews', status_code=201)
 async def create_review(background_tasks: BackgroundTasks,
                         product_id: int = Path(...),
                         rating: int = Form(..., ge=1, le=5),
@@ -71,7 +71,7 @@ def get_product_reviews(product_id: int = Path(...),
 
     return {"reviews": reviews[:size], "has_more": has_more}
 
-@router.patch('/reviews/{review_id}')
+@router.patch('/reviews/{review_id}', status_code=204)
 def edit_review(background_tasks: BackgroundTasks,
                 review_id: int = Path(...),
                 rating: int | None= Form(None, ge=1, le=5),
@@ -98,9 +98,7 @@ def edit_review(background_tasks: BackgroundTasks,
         review.rating = rating
     db.commit()
 
-    return {"status": "Review edited"}
-
-@router.delete('/reviews/{review_id}')
+@router.delete('/reviews/{review_id}', status_code=204)
 def delete_review(review_id: int = Path(...),
                   author: User = Depends(get_current_user),
                   db: Session = Depends(get_db)):
@@ -124,5 +122,3 @@ def delete_review(review_id: int = Path(...),
 
     db.delete(review)
     db.commit()
-    
-    return {"status": "Review deleted"}

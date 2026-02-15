@@ -15,6 +15,7 @@ venv/
 .venv/
 env/
 .env
+.env.docker
 
 # Editors and IDEs (VS Code, PyCharm, etc.)
 .idea/
@@ -36,3 +37,4 @@ Thumbs.db # Windows
 .ipynb_checkpoints
 
 media/
+*.db

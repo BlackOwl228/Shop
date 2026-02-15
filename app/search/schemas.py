@@ -18,8 +18,8 @@ ProductsMap = {SortingProducts.price: ProductVariant.price,
                SortingProducts.created_at: Product.created_at}
 
 class SearchingProduct(BaseModel):
+    id: int
     product_id: int
-    variant_id: int
 
     name: str
     price: Decimal

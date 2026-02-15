@@ -8,44 +8,50 @@ def create_payment(amount: int):
     )
     return intent.id, intent.client_secret
 
-from typing import List, Dict
 from decimal import Decimal
-
 from fastapi import HTTPException
+from models import Product, Order, OrderItem, ProductVariant
+from .schemas import ProductItemIn, OrderLine
 
-from models import Product, Order, OrderItem
-from .schemas import ProductItem
+def validate_and_build_lines(
+    items: list[ProductItemIn],
+    variants_map: dict[int, ProductVariant],
+) -> list[OrderLine]:
+    lines = []
 
-def validate_order(products: List[ProductItem],
-                   variants_map: Dict[int, Product]):
-    for item in products:
+    for item in items:
         variant = variants_map.get(item.variant_id)
-
         if not variant:
-            raise HTTPException(status_code=400, detail="Variant unavailable")
+            raise HTTPException(400, "Variant unavailable")
 
         if variant.price != item.client_price:
-            raise HTTPException(status_code=400, detail="Price was changed")
+            raise HTTPException(409, "Price changed")
 
         if variant.stock < item.quantity:
-            raise HTTPException(status_code=400, detail=f"Variant {variant.id} out of stock")
+            raise HTTPException(409, "Out of stock")
 
-def add_products(products: List[ProductItem],
-                 variants_map: Dict[int, Product],
-                 order: Order):
+        lines.append(
+            OrderLine(
+                variant=variant,
+                quantity=item.quantity,
+                unit_price=variant.price,
+            )
+        )
+
+    return lines
+
+def apply_products(order: Order, lines: list[OrderLine]):
     total = Decimal(0)
-    for item in products:
-        variant = variants_map[item.variant_id]
-        
+    for line in lines:
         order_item = OrderItem(
-            variant_id=variant.id,
-            quantity=item.quantity,
-            unit_price=variant.price,
+            variant_id=line.variant.id,
+            quantity=line.quantity,
+            unit_price=line.unit_price,
         )
         order.order_items.append(order_item)
-        total += variant.price * item.quantity
 
-        variant.stock -= item.quantity
+        total += line.unit_price * line.quantity
+        line.variant.stock -= line.quantity
 
     order.total_price = total
 

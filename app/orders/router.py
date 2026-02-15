@@ -7,17 +7,22 @@ from sqlalchemy.orm import Session
 
 from core import get_db, get_current_user
 from models import User, Seller, Product, ProductVariant, Order
-from .schemas import ProductItem, CreatingOrderResponse
-from .services import create_payment, validate_order, add_products
+from .schemas import ProductItemIn, CreatingOrderResponse
+from .services import create_payment, validate_and_build_lines, apply_products
 from domain.product_rules import available_products
 from domain.order_rules import can_cancel_order, can_complete_order
 
 router = APIRouter(prefix='/orders', tags=["Order"])
-
+@router.get('')
+def debug(db: Session = Depends(get_db)):
+    variants = available_products(db.query(ProductVariant)).all() 
+    print(variants)
+    return variants
 @router.post('', status_code=201, response_model=CreatingOrderResponse)
-def create_order(products: List[ProductItem],
+def create_order(products: List[ProductItemIn],
                  buyer: User = Depends(get_current_user),
-                 db: Session = Depends(get_db)):
+                 db: Session = Depends(get_db)
+                 ):
     variant_ids = [item.variant_id for item in products]
 
     variants = (available_products(db.query(ProductVariant))
@@ -25,9 +30,9 @@ def create_order(products: List[ProductItem],
                 .all()
                 )
     variants_map = {v.id: v for v in variants}
-    validate_order(products, variants_map)
+    order_lines = validate_and_build_lines(products, variants_map)
 
-    order = add_products(products, variants_map, Order(buyer_id=buyer.id))
+    order = apply_products(Order(buyer_id=buyer.id), order_lines)
 
     #order.payment_intent = create_payment(int(total_amount*100))
     #ВРЕМЕННАЯ ЗАМЕНА СТРАЙП
@@ -35,13 +40,13 @@ def create_order(products: List[ProductItem],
     db.add(order)
     db.commit()
 
-    return {"order_id": order.id, "total_amount": order.total_price, "payment_secret": 1} #заглушка пока не верну страйп
+    return {"order_id": order.id, "total_amount": order.total_price, "payment_secret": order.payment_intent} #заглушка пока не верну страйп
 
 @router.patch('/{order_id}/cancel', status_code=204)
 def cancel_order(order_id: int = Path(..., ge=1),
                  buyer: User = Depends(get_current_user),
-                 db: Session = Depends(get_db)):
-    
+                 db: Session = Depends(get_db)
+                 ):
     order = db.query(Order).filter(Order.id == order_id, Order.buyer_id == buyer.id).first()
 
     if not order:
@@ -56,8 +61,8 @@ def cancel_order(order_id: int = Path(..., ge=1),
 @router.patch('/{order_id}/complete', status_code=201)
 def complete_order(order_id: int = Path(..., ge=1),
                    buyer: User = Depends(get_current_user),
-                   db: Session = Depends(get_db)):
-    
+                   db: Session = Depends(get_db)
+                   ):
     order = db.query(Order).filter(Order.id == order_id, Order.buyer_id == buyer.id).first()
 
     if not order:
@@ -73,8 +78,8 @@ def complete_order(order_id: int = Path(..., ge=1),
 
 @router.post("/{order_id}/pay-test", status_code=201)
 def pay_order(order_id: int = Path(..., ge=1),
-              db: Session = Depends(get_db)):
-    
+              db: Session = Depends(get_db)
+              ):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
