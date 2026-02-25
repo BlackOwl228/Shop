@@ -38,3 +38,15 @@ class ProductVariant(Base):
     cart_items = relationship("CartItem", back_populates="variant")
 
     CheckConstraint("stock >= 0", name="ck_variant_stock_non_negative")
+    
+    @property
+    def rating(self) -> float:
+        return self.product.rating if self.product else 0.0
+
+    @property
+    def category_id(self) -> int | None:
+        return self.product.category_id if self.product else None
+
+    @property
+    def seller_id(self) -> int:
+        return self.product.seller_id if self.product else 0

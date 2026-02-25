@@ -9,15 +9,11 @@ from core import get_db, get_current_user
 from models import User, Seller, Product, ProductVariant, Order
 from .schemas import ProductItemIn, CreatingOrderResponse
 from .services import create_payment, validate_and_build_lines, apply_products
-from domain.product_rules import available_products
-from domain.order_rules import can_cancel_order, can_complete_order
+from rules.product_rules import available_products
+from rules.order_rules import can_cancel_order, can_complete_order
 
 router = APIRouter(prefix='/orders', tags=["Order"])
-@router.get('')
-def debug(db: Session = Depends(get_db)):
-    variants = available_products(db.query(ProductVariant)).all() 
-    print(variants)
-    return variants
+
 @router.post('', status_code=201, response_model=CreatingOrderResponse)
 def create_order(products: List[ProductItemIn],
                  buyer: User = Depends(get_current_user),

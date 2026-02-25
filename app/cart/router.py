@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, Path, Form
 from sqlalchemy.orm import Session
 
 from core.security import get_db, get_current_user
-from domain.product_rules import available_products
+from rules.product_rules import available_products
 from models import User, ProductVariant, CartItem
 from .schemas import CartResponse
 

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from core import get_db, save_image, delete_image
 from core.security import get_current_seller
 from models import Product, ProductVariant, Seller
-from domain.seller_rules import can_interact_product
+from rules.seller_rules import can_interact_product
 from .schemas import ProductCartResponse
 
 router = APIRouter(prefix="/products", tags=["Product"])
@@ -31,7 +31,7 @@ def create_product(name: str = Form(..., min_length=3, max_length=255),
 @router.post('/{product_id}/variants', status_code=201)
 def create_variant(background_tasks: BackgroundTasks,
                    product_id: int = Path(...),
-                   name: str = Form(..., min_length=3, max_length=255),
+                   name: str = Form(..., min_length=3, max_length=32),
                    price: float = Form(..., ge=1),
                    stock: int = Form(0, ge=0),
                    image: UploadFile | None = File(None, max_length=15 *1024*1024, media_type=['image/png', 'image/jpeg']),

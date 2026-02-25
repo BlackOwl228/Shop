@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from core import get_db
 from models import Product
 from app.search.schemas import OrderingParam, SortingProducts, ProductsMap
-from domain.product_rules import available_products
+from rules.product_rules import available_products
 from core.utils import templates
 
 router = APIRouter(prefix='/front', tags=["FOR WEBSITE"])

@@ -30,7 +30,7 @@ app.include_router(review.router)
 
 import time
 from prometheus_client import make_asgi_app
-from metrics import REQUEST_COUNT, REQUEST_LATENCY
+from core.metrics import REQUEST_COUNT, REQUEST_LATENCY
 @app.middleware("http")
 async def metrics_middleware(request, call_next):
     start = time.time()

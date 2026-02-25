@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from core import get_db
 from .schemas import OrderingParam, SortingProducts, SearchResponse, ProductsMap
 from models import Product, ProductVariant
-from domain.product_rules import available_products
+from rules.product_rules import available_products
 
 router = APIRouter(tags=["Search"])
 
@@ -24,6 +24,11 @@ def search_products(q: str | None = Query(None),
                                )
     if q:
         query = query.filter(Product.name.ilike(f"%{q}%"))
+        '''
+        query = query.filter(
+            (Product.name.ilike(f"%{q}%")) | 
+            (ProductVariant.name.ilike(f"%{q}%"))
+        ) ''' #Это доп вариант
 
     if category_id:
         query = query.filter(Product.category_id == category_id)

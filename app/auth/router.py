@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from core import get_db, hash_password, verify_password, create_access_token, create_refresh_token, delete_refresh_token, send_message
 from models import User, RefreshToken, EmailToken
-from .schemas import UserEmail, UserName, UserPassword, LoginResponse, RefreshResponse
+from .schemas import UserEmail, UserName, UserPassword, LoginData, LoginResponse, RefreshResponse
 
 router = APIRouter(tags=["Auth"])
 
@@ -50,8 +50,10 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(),
                db: Session = Depends(get_db)
                ):
     try:
-        email = UserEmail.model_validate({"email": form_data.username}).email
-        password = UserPassword.model_validate({"password": form_data.password}).password
+        login_data = LoginData.model_validate({"username": form_data.username,
+                                               "password": form_data.password})
+        email = login_data.username
+        password = login_data.password
     except ValidationError:
         raise HTTPException(status_code=422, detail="Incorrect data, try again")
 

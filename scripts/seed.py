@@ -1,93 +1,93 @@
-'''
+
 from core.db import SessionLocal
 from faker import Faker
 
-fake = Faker()
+fake = Faker("ru_RU")
 
-from models.users import User
+import uuid, secrets
+from models.users import User, Seller
 from core.security import hash_password
-
-
-def seed_users(count):
-    db = SessionLocal()
-    users = []
-
-    for _ in range(count):
-        password=fake.password(length=10, special_chars=False)
-        users.append(
-            User(
-                email=fake.unique.email(),
-                name=fake.name(),
-                hash=hash_password(password)
-            )
-        )
-
-    db.bulk_save_objects(users)
-    db.commit()
-    db.close()
-
-import random
-
-def seed_products(count):
-    from models.products import Product
-    db = SessionLocal()
-    products = []
-
-    for _ in range(count):
-        products.append(
-            Product(
-                name=fake.word(),
-                price=random.randint(100, 5000),
-                seller_id=random.randint(1, 200), 
-            )
-        )
-
-    db.bulk_save_objects(products)
-    db.commit()
-    db.close()
-
-if __name__ == "__main__":
-    seed_products(200)
-    print("Users seeded")'''
-
-'''
-import requests, os
 from random import randint
 from core.db import SessionLocal
-from models import Product
-from core import save_product_image
+from models import Product, ProductVariant
 
-def seed_products():
+def seed_users(count, batch_size=1000):
     db = SessionLocal()
-    data = requests.get("https://fakestoreapi.com/products").json()
+
     try:
-        for item in data:
-            product = Product(
-                name=item["title"],
-                price=int(item["price"]),
-                description=item["description"],
-                rating=item["rating"]["rate"],
-                seller_id=randint(1, 100)
-            )
-            db.add(product)
-            db.flush()
-            url = item["image"]
-            ext = url.split('.')[-1].split("?")[0]
-            folder = os.path.join("media", "product")
-            os.makedirs(folder, exist_ok=True)
-            filename = f"{product.id}.{ext}"
-            full_path = os.path.join(folder, filename)
+        for i in range(0, count, batch_size):
+            batch = []
 
-            r = requests.get(url)
-            with open(full_path, "wb") as f:
-                f.write(r.content)
+            for _ in range(min(batch_size, count - i)):
+                batch.append(
+                    User(
+                        name=f"{fake.name()} {randint(1, 100)}",
+                        email="fake"+secrets.token_hex(10)+"@gmail.com",
+                        hashed_password=f"{uuid.uuid4()}"
+                    )
+                )
+            db.bulk_save_objects(batch)
 
-            product.image = filename
+        db.commit()
+
+        for i in range(0, count, batch_size):
+            batch = []
+
+            for j in range(min(batch_size, count - i)):
+                batch.append(
+                    Seller(
+                        user_id=i+j+1,
+                        company_name=f"{fake.color_name()} {fake.word().capitalize()} {randint(1, 100)}",
+                    )
+                )
+            db.bulk_save_objects(batch)
+
+        db.commit()
+    finally:
+        db.close()
+
+def seed_products(count, batch_size=5000):
+    db = SessionLocal()
+
+    try:
+        for i in range(0, count, batch_size):
+            batch = []
+
+            for j in range(min(batch_size, count - i)):
+                batch.append(
+                    Product(
+                        name=f"{fake.word().capitalize()}",
+                        seller_id=randint(1, 1000),
+                    )
+                )
+            db.bulk_save_objects(batch)
+
+        db.commit()
+    finally:
+        db.close()
+
+def seed_variants(count, batch_size=5000):
+    db = SessionLocal()
+
+    try:
+        for i in range(0, count, batch_size):
+            batch = []
+
+            for _ in range(min(batch_size, count - i)):
+                batch.append(
+                    ProductVariant(
+                        name=f"{fake.word().capitalize()} {randint(1, 100)}",
+                        price=randint(50, 20000),
+                        product_id=randint(1, 10000),
+                    )
+                )
+            db.bulk_save_objects(batch)
 
         db.commit()
     finally:
         db.close()
 
 if __name__ == "__main__":
-    seed_products()
-'''
+    seed_users(1000)
+    seed_products(10000)
+    seed_variants(100000)

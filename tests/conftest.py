@@ -25,7 +25,7 @@ def db_session():
 from fastapi.testclient import TestClient
 from core.security import get_current_seller, get_current_user, get_current_admin
 from models.users import User, Seller
-from domain.seller_rules import SellerStatus
+from rules.seller_rules import SellerStatus
 
 @pytest.fixture(scope="function")
 def client(db_session):

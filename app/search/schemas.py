@@ -20,13 +20,16 @@ ProductsMap = {SortingProducts.price: ProductVariant.price,
 class SearchingProduct(BaseModel):
     id: int
     product_id: int
-
     name: str
     price: Decimal
     rating: float
     image: str | None
+    stock: int
+    category_id: int | None
+    seller_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class SearchResponse(BaseModel):
     products: List[SearchingProduct]

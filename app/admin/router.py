@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from core import get_db
 from core.security import get_current_admin
 from models import User, Product, Order, Seller, Review, Category
-from domain import ProductStatus, SellerStatus, OrderStatus
+from rules import ProductStatus, SellerStatus, OrderStatus
 
 router = APIRouter(prefix='/admin', tags=["Admin"])
 
