@@ -1,11 +1,11 @@
 FROM python:3.11-slim
 
-WORKDIR /Shop
+WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY src .
 
 EXPOSE 8000
 

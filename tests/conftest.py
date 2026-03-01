@@ -2,8 +2,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from core.db import Base, get_db
-from main import app
+from src.core.db import Base, get_db
+from src.main import app
 
 engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False},
                        poolclass=StaticPool)
@@ -23,9 +23,9 @@ def db_session():
         session.close()
 
 from fastapi.testclient import TestClient
-from core.security import get_current_seller, get_current_user, get_current_admin
-from models.users import User, Seller
-from rules.seller_rules import SellerStatus
+from app.auth.security import get_current_seller, get_current_user, get_current_admin
+from src.models.users import User, Seller
+from src.rules.seller_rules import SellerStatus
 
 @pytest.fixture(scope="function")
 def client(db_session):

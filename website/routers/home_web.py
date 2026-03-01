@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Path
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from core import get_db
-from models import Product
-from core.utils import templates
+from src.core.db import get_db
+from src.models.products import Product
+from ..config import templates
 
 router = APIRouter(prefix='/front', tags=["FOR WEBSITE"])
 

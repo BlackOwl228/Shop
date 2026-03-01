@@ -1,15 +1,15 @@
 
-from core.db import SessionLocal
 from faker import Faker
 
 fake = Faker("ru_RU")
 
 import uuid, secrets
-from models.users import User, Seller
-from core.security import hash_password
 from random import randint
-from core.db import SessionLocal
-from models import Product, ProductVariant
+
+from src.models.users import User, Seller
+from src.models.products import Product, ProductVariant
+from app.auth.security import hash_password
+from src.core.db import SessionLocal
 
 def seed_users(count, batch_size=1000):
     db = SessionLocal()

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Request, Depends
 from sqlalchemy.orm import Session
 
-from models import User
-from core.db import get_db
-from core.utils import templates
-from core.security import get_current_user_cookie
+from src.models.users import User
+from src.core.db import get_db
+from app.auth.security import get_current_user_cookie
+from ..config import templates
 
 router = APIRouter(tags=["FOR WEBSITE"])
 

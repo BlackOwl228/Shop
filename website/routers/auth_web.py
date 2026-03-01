@@ -2,12 +2,13 @@ from fastapi import APIRouter, Response, Request, HTTPException, Depends, Form
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from core.token.access import create_access_token
-from core.token.refresh import create_refresh_token
-from models import RefreshToken, User
-from core.db import get_db
-from core.utils import templates
-from core.security import hash_password, verify_password
+from src.models.users import User
+from src.models.tokens import RefreshToken
+from src.app.auth.token.access import create_access_token
+from src.app.auth.token.refresh import create_refresh_token
+from src.core.db import get_db
+from app.auth.security import hash_password, verify_password
+from ..config import templates
 
 router = APIRouter(tags=["FOR WEBSITE"])
 

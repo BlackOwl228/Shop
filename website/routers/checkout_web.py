@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from core.utils import templates
+from ..config import templates
 
 router = APIRouter(tags=["FOR WEBSITE"])
 
