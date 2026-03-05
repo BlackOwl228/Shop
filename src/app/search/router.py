@@ -1,10 +1,7 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session, joinedload
-
-from core.db import get_db
-from .schemas import OrderingParam, SortingProducts, SearchResponse, ProductsMap
-from models.products import Product, ProductVariant
-from rules.product_rules import available_products
+from services.public import PublicService
+from core.depends import get_public_service
+from .schemas import OrderingParam, SortingProducts, SearchResponse
 
 router = APIRouter(tags=["Search"])
 
@@ -17,35 +14,10 @@ def search_products(q: str | None = Query(None),
                     order: OrderingParam = Query(OrderingParam.desc),
                     page: int = Query(1, ge=1),
                     size: int = Query(30, ge=1, le=100),
-                    db: Session = Depends(get_db)
+                    public_service: PublicService = Depends(get_public_service)
                     ):
-    query = available_products(db.query(ProductVariant)
-                               .options(joinedload(ProductVariant.product))
-                               )
-    if q:
-        query = query.filter(Product.name.ilike(f"%{q}%"))
-        '''
-        query = query.filter(
-            (Product.name.ilike(f"%{q}%")) | 
-            (ProductVariant.name.ilike(f"%{q}%"))
-        ) ''' #Это доп вариант
-
-    if category_id:
-        query = query.filter(Product.category_id == category_id)
-
-    if min_price:
-        query = query.filter(ProductVariant.price >= min_price)
-
-    if max_price:
-        query = query.filter(ProductVariant.price <= max_price)
-
-    column = ProductsMap[sort]
-    query = query.order_by(column.desc() if order == OrderingParam.desc else column.asc())
-
-    query = query.limit(size+1).offset(size*(page-1))
-    result = query.all()
-
-    has_more = len(result) > size
-    result = result[:size]
+    result, has_more = public_service.search_products(q=q, category_id=category_id,
+                                                      min_price=min_price, max_price=max_price,
+                                                      sort=sort, order=order, page=page, size=size)
 
     return {"products": result, "has_more": has_more}

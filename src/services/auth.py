@@ -1,0 +1,73 @@
+import uuid, os
+from datetime import datetime, timedelta, timezone
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from app.auth.security import hash_password, check_password
+from models.users import User, Seller
+from app.auth.schemas import LoginData
+
+class AuthService():
+    def __init__(self, db: Session):
+        self.db = db
+        email_timedelta = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
+        self.verify_email_time = datetime.now(timezone.utc) + timedelta(hours=email_timedelta)
+
+    def user_by_id(self, user_id):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+    def user_by_email(self, email: str):
+        user = self.db.query(User).filter(User.email == email).first()
+        if  not user:
+            raise HTTPException(status_code=409, detail="Wrong data, try again")
+        
+        return user
+    
+    def verify_password(self, user: User, password: str):
+        if not check_password(password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Wrong data, try again")
+        
+    def check_if_passwords_match(password: str, new_password: str):
+        if password == new_password: return True
+    
+    def change_password(self, user: User, new_password: str):
+        user.hashed_password = hash_password(new_password)
+        self.db.commit()
+
+    def check_existing(self, email: str):
+        exist_user = self.db.query(User).filter(User.email == email).first()
+        if exist_user:
+            raise HTTPException(status_code=409, detail="User already exists")
+        
+    def create_user(self, name: str, email: str, password: str):
+        hashed_password = hash_password(password)
+        user = User(name=name, email=email, hashed_password=hashed_password)
+
+        self.db.add(user)
+        self.db.flush(user)
+
+        return user
+    
+    def check_login_data(self, login_data) -> list:
+        try:
+            login_data = LoginData.model_validate({"username": login_data.username,
+                                                   "password": login_data.password})
+            email = login_data.username
+            password = login_data.password
+        except Exception:
+            raise HTTPException(status_code=422, detail="Incorrect data, try again")
+        
+        return email, password
+    
+
+    def check_old_seller_request(self, user: User):
+        old_request = self.db.query(Seller).filter(Seller.user_id == user.id).first()
+        if old_request:
+            raise HTTPException(status_code=400, detail="request is already exists")
+        
+    def create_seller_request(self, user: User, company_name: str):
+        request = Seller(user_id=user.id,
+                         company_name=company_name)
+        self.db.add(request)
+        self.db.commit()

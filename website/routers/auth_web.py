@@ -7,7 +7,7 @@ from src.models.tokens import RefreshToken
 from src.app.auth.token.access import create_access_token
 from src.app.auth.token.refresh import create_refresh_token
 from src.core.db import get_db
-from app.auth.security import hash_password, verify_password
+from app.auth.security import hash_password, check_password
 from ..config import templates
 
 router = APIRouter(tags=["FOR WEBSITE"])
@@ -57,7 +57,7 @@ def login(
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(password, user.hashed_password):
+    if not user or not check_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token(user_id=user.id)

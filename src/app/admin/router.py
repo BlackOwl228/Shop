@@ -1,132 +1,73 @@
-from fastapi import APIRouter, HTTPException, Depends, Path, Form
-from sqlalchemy.orm import Session
-
-from core.db import get_db
-from app.auth.security import get_current_admin
-from models.users import User, Seller
-from models.products import Product
-from models.orders import Order
-from models.reviews import Review
-from models.collections import Category
-from rules.product_rules import ProductStatus
-from rules.seller_rules import SellerStatus
-from rules.order_rules import OrderStatus
+from fastapi import APIRouter, Depends, Path
+from services.admin import AdminService
+from core.depends import get_admin_service
 
 router = APIRouter(prefix='/admin', tags=["Admin"])
 
 @router.delete('/products/{product_id}/block')
-def block_products(product_id: int = Path(...),
-                   admin: User = Depends(get_current_admin),
-                   db: Session = Depends(get_db)):
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    if product.status == ProductStatus.BLOCKED:
-        return {"status": "Already blocked"}
-    
-    product.status = ProductStatus.BLOCKED
-    db.commit()
+def block_product(product_id: int = Path(...),
+                   admin_service: AdminService = Depends(get_admin_service)):
+    product = admin_service.product_by_id(product_id)
+
+    admin_service.block_product(product)
 
 @router.patch('/products/{product_id}/unblock')
-def unblock_products(product_id: int = Path(...),
-                     admin: User = Depends(get_current_admin),
-                     db: Session = Depends(get_db)):
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    if product.status == ProductStatus.ACTIVE:
-        return {"status": "Already unblocked"}
+def unblock_product(product_id: int = Path(...),
+                     admin_service: AdminService = Depends(get_admin_service)):
+    product = admin_service.product_by_id(product_id)
 
-    product.status = ProductStatus.ACTIVE
-    db.commit()
-
+    admin_service.unblock_product(product)
 
 @router.post('/sellers/{seller_id}')
 def approve_seller_request(seller_id: int = Path(...),
-                           admin: User = Depends(get_current_admin),
-                           db: Session = Depends(get_db)):
-    request = db.query(Seller).filter(Seller.id == seller_id).first()
-    if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
-    if request.status == SellerStatus.ACTIVE:
-        return {"status": "Already approved"}
-    
-    request.status = SellerStatus.ACTIVE
-    db.commit()
+                           admin_service: AdminService = Depends(get_admin_service)):
+    seller = admin_service.seller_by_id(seller_id)
+
+    admin_service.approve_seller(seller)
 
     return {"status": f"Seller {seller_id} was approved"}
 
 @router.delete('/sellers/{seller_id}')
 def suspend_seller(seller_id: int = Path(...),
-                   admin: User = Depends(get_current_admin),
-                   db: Session = Depends(get_db)):
-    seller = db.query(Seller).filter(Seller.id == seller_id).first()
-    if not seller:
-        raise HTTPException(status_code=404, detail="Seller not found")
-    if seller.status == SellerStatus.SUSPENDED:
-        return {"status": "Already suspended"}
-    
-    seller.status = SellerStatus.SUSPENDED
-    db.commit()
+                   admin_service: AdminService = Depends(get_admin_service)):
+    seller = admin_service.seller_by_id(seller_id)
+
+    admin_service.suspend_seller(seller)
 
     return {"status": f"Seller {seller_id} was suspended"}
 
-
 @router.patch('/orders/{order_id}/complete')
 def complete_order(order_id: int = Path(...),
-                   admin: User = Depends(get_current_admin),
-                   db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    if order.status != OrderStatus.PAID:
-        return {"status": "Order not paid yet, you cannot complete it"}
-    
-    order.status = OrderStatus.COMPLETED
-    db.commit()
+                   admin_service: AdminService = Depends(get_admin_service)):
+    order = admin_service.order_by_id(order_id)
+
+    admin_service.complete_order(order)
 
 @router.patch('/orders/{order_id}/cancel')
 def cancel_order(order_id: int = Path(...),
-                 admin: User = Depends(get_current_admin),
-                 db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    if order.status == OrderStatus.PAID:
-        return {"status": "Order already paid you cannot cancel it"}
-    
-    order.status = OrderStatus.CANCELLED
-    db.commit()
+                 admin_service: AdminService = Depends(get_admin_service)):
+    order = admin_service.order_by_id(order_id)
 
+    admin_service.cancel_order(order)
 
 @router.delete('/reviews/{review_id}')
 def delete_review(review_id: int = Path(...),
-                  admin: User = Depends(get_current_admin),
-                  db: Session = Depends(get_db)):
-    review = db.query(Review).filter(Review.id == review_id).first()
-    if not review:
-        raise HTTPException(status_code=404, detail="Review not found")
-    db.delete(review)
-    db.commit()
+                  admin_service: AdminService = Depends(get_admin_service)):
+    review = admin_service.review_by_id(review_id)
+
+    admin_service.delete_review(review)
 
 @router.post('/categories')
-def make_category(name: str,
-                  admin: User = Depends(get_current_admin),
-                  db: Session = Depends(get_db)):
-    db.add(Category(name=name))
-    db.commit()
+def create_category(name: str,
+                  admin_service: AdminService = Depends(get_admin_service)):
+    admin_service.create_category(name)
+
     return{"status": "created"}
 
 @router.post('/products/{product_id}/categories/{category_id}')
 def add_product_to_category(product_id: int = Path(...),
                             category_id: int = Path(...),
-                            admin: User = Depends(get_current_admin),
-                            db: Session = Depends(get_db)):
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    product.category=category
-    db.commit()
+                            admin_service: AdminService = Depends(get_admin_service)):
+    product = admin_service.product_by_id(product_id)
+
+    admin_service.product_to_category(product=product, category_id=category_id)
