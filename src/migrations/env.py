@@ -1,11 +1,10 @@
+import os
 from logging.config import fileConfig
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
 
 from alembic import context
 from dotenv import load_dotenv
-import os
+from sqlalchemy import engine_from_config, pool
+
 load_dotenv()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,12 +18,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from core.db import Base
-from models.users import User, Seller
-from models.products import Product, ProductVariant
-from models.orders import Order, OrderItem
-from models.tokens import RefreshToken, EmailToken
-from models.collections import CartItem, Category, favorites
-from models.reviews import Review
+
 target_metadata = Base.metadata
 
 database_url = os.getenv("DATABASE_URL")

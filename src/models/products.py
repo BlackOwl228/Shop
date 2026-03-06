@@ -1,14 +1,26 @@
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import relationship
-from sqlalchemy import String, Text, ForeignKey, Numeric, Integer, Float, Column, DateTime, func, CheckConstraint
 
 from core.db import Base
 from models.collections import favorites
+
 
 class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False) 
+    name = Column(String(255), nullable=False)
     rating = Column(Float, default=0.0, nullable=False)
     reviews_count = Column(Integer, default=0, nullable=False)
     description = Column(Text, nullable=True)
@@ -22,6 +34,7 @@ class Product(Base):
     seller = relationship("Seller", back_populates="products")
     reviews = relationship("Review", back_populates="product")
     favorited_by_user = relationship("User", secondary=favorites, back_populates="favorite_products")
+
 
 class ProductVariant(Base):
     __tablename__ = "product_variants"
@@ -38,7 +51,7 @@ class ProductVariant(Base):
     cart_items = relationship("CartItem", back_populates="variant")
 
     CheckConstraint("stock >= 0", name="ck_variant_stock_non_negative")
-    
+
     @property
     def rating(self) -> float:
         return self.product.rating if self.product else 0.0

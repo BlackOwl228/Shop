@@ -1,16 +1,18 @@
-from fastapi import APIRouter, Response, Request, HTTPException, Depends, Form
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from src.models.users import User
-from src.models.tokens import RefreshToken
+from app.auth.security import check_password, hash_password
 from src.app.auth.token.access import create_access_token
 from src.app.auth.token.refresh import create_refresh_token
 from src.core.db import get_db
-from app.auth.security import hash_password, check_password
+from src.models.tokens import RefreshToken
+from src.models.users import User
+
 from ..config import templates
 
 router = APIRouter(tags=["FOR WEBSITE"])
+
 
 @router.get("/front/register")
 def register_page(request: Request):
@@ -18,6 +20,7 @@ def register_page(request: Request):
         "reg.html",
         {"request": request},
     )
+
 
 @router.post("/front/register")
 def register_user(
@@ -42,12 +45,14 @@ def register_user(
 
     return RedirectResponse("/front/login", status_code=303)
 
+
 @router.get("/front/login")
 def login_page(request: Request):
     return templates.TemplateResponse(
         "login.html",
         {"request": request},
     )
+
 
 @router.post("/front/login")
 def login(
@@ -83,16 +88,16 @@ def login(
 
     return response
 
+
 @router.post("/front/refresh")
 def refresh(request: Request, response: Response, db: Session = Depends(get_db)):
     token = request.cookies.get("refresh_token")
     if not token:
         raise HTTPException(status_code=401)
-    
+
     refresh_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
     if refresh_token:
         raise HTTPException(status_code=401, detail="Wrong token, login again")
-
 
     new_access = create_access_token(refresh_token.user_id)
 

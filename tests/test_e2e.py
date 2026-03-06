@@ -1,10 +1,12 @@
-def test_full_path(client, seller, buyer):    
+def test_full_path(client, seller, buyer):
     response = client.post("/products", data={"name": "Test_product"})
     assert response.status_code == 201
     data = response.json()
     product_id = data.get("product_id")
 
-    response = client.post(f"/products/{product_id}/variants", data={"name": "Test_variant", "price": 10000, "stock": 10})
+    response = client.post(
+        f"/products/{product_id}/variants", data={"name": "Test_variant", "price": 10000, "stock": 10}
+    )
     assert response.status_code == 201
     data = response.json()
     variant_id = data.get("variant_id")
@@ -23,15 +25,16 @@ def test_full_path(client, seller, buyer):
 
     response = client.get("/cart")
     data = response.json()
-    
+
     order_input = []
     for item in data["items"]:
-        order_input.append({
-            "variant_id": item["variant"]["id"],
-            "quantity": item["quantity"],
-            "client_price": item["variant"]["price"],
-        })
+        order_input.append(
+            {
+                "variant_id": item["variant"]["id"],
+                "quantity": item["quantity"],
+                "client_price": item["variant"]["price"],
+            }
+        )
 
-    response = client.post("/orders", 
-                           json=order_input)
+    response = client.post("/orders", json=order_input)
     assert response.status_code == 201

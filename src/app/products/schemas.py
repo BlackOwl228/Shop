@@ -1,6 +1,7 @@
 from decimal import Decimal
-from typing import List
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class ProductPesponse(BaseModel):
     name: str
@@ -10,6 +11,7 @@ class ProductPesponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class VariantResponse(BaseModel):
     id: int
     price: Decimal = Field(..., gt=0)
@@ -18,6 +20,7 @@ class VariantResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ProductCartResponse(BaseModel):
     product: ProductPesponse
-    variants: List[VariantResponse]
+    variants: list[VariantResponse]

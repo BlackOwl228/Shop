@@ -1,5 +1,7 @@
 from decimal import Decimal
+
 from pydantic import BaseModel
+
 
 class CartVariant(BaseModel):
     id: int
@@ -8,10 +10,12 @@ class CartVariant(BaseModel):
     stock: int
     image: str | None
 
+
 class CartItemResponse(BaseModel):
     variant: CartVariant
     quantity: int
     subtotal: Decimal
+
 
 class CartResponse(BaseModel):
     items: list[CartItemResponse]

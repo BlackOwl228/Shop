@@ -1,7 +1,8 @@
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.orm import relationship
-from sqlalchemy import ForeignKey, Column, Integer, DateTime, func, Numeric, String
 
 from core.db import Base
+
 
 class Order(Base):
     __tablename__ = "orders"
@@ -15,6 +16,7 @@ class Order(Base):
 
     user = relationship("User", back_populates="orders")
     order_items = relationship("OrderItem", back_populates="order")
+
 
 class OrderItem(Base):
     __tablename__ = "order_items"

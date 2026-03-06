@@ -1,8 +1,9 @@
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
-from sqlalchemy import String, Integer, Boolean, Column, DateTime, ForeignKey, func
 
 from core.db import Base
 from models.collections import favorites
+
 
 class User(Base):
     __tablename__ = "users"
@@ -24,6 +25,7 @@ class User(Base):
     reviews = relationship("Review", back_populates="author")
 
     seller = relationship("Seller", back_populates="user", uselist=False)
+
 
 class Seller(Base):
     __tablename__ = "sellers"

@@ -1,8 +1,9 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 from fastapi import HTTPException
-from sqlalchemy.orm import Session, joinedload
 from jose import jwt
+from sqlalchemy.orm import Session, joinedload
 
 from models.users import User
 
@@ -10,15 +11,14 @@ SecretKey = os.getenv("SECRET_KEY")
 Algorithm = "HS256"
 access_time = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
-def create_access_token(user_id: int) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=access_time)
 
-    payload = {
-        "sub": str(user_id),
-        "exp": expire,
-        "iat": datetime.now(timezone.utc)}
-    
+def create_access_token(user_id: int) -> str:
+    expire = datetime.now(UTC) + timedelta(minutes=access_time)
+
+    payload = {"sub": str(user_id), "exp": expire, "iat": datetime.now(UTC)}
+
     return jwt.encode(payload, SecretKey, algorithm=Algorithm)
+
 
 def decode_access_token(token: str) -> int:
     try:
@@ -32,15 +32,17 @@ def decode_access_token(token: str) -> int:
             return int(payload["sub"])
         else:
             raise Exception
-    except Exception:
-        raise HTTPException(status_code=401, detail="Token isn't correct")
-    
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Token isn't correct") from e
+
+
 def get_current_user_from_jwt(token: str, db: Session):
     user_id = decode_access_token(token)
     user = db.query(User).get(user_id)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     return user
+
 
 def get_seller_from_jwt(token: str, db: Session):
     user_id = decode_access_token(token)
@@ -49,9 +51,10 @@ def get_seller_from_jwt(token: str, db: Session):
         raise HTTPException(status_code=403, detail="User is not a seller")
     return user.seller
 
+
 def get_admin_from_jwt(token: str, db: Session):
     user_id = decode_access_token(token)
-    admin = db.query(User).filter(User.id==user_id, User.is_admin==True).first()
+    admin = db.query(User).filter(User.id == user_id, User.is_admin).first()
     if not admin:
         raise HTTPException(status_code=401, detail="You aren't admin")
     return admin

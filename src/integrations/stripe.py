@@ -1,6 +1,8 @@
 import stripe
 from fastapi import HTTPException
+
 from models.orders import Order
+
 
 def create_payment(amount: int):
     intent = stripe.PaymentIntent.create(
@@ -10,12 +12,10 @@ def create_payment(amount: int):
     )
     return intent.id, intent.client_secret
 
+
 def confirm_payment(order: Order):
     # подтверждаем тестовой картой pm_card_visa
-    intent = stripe.PaymentIntent.confirm(
-        order.payment_intent,
-        payment_method="pm_card_visa"
-    )
+    intent = stripe.PaymentIntent.confirm(order.payment_intent, payment_method="pm_card_visa")
 
     if intent.status == "succeeded":
         order.status = "paid"

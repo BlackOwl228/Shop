@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from pydantic import BaseModel, EmailStr
+
 
 class ProfilePesponse(BaseModel):
     id: int

@@ -1,21 +1,28 @@
-from enum import Enum
 from decimal import Decimal
-from typing import List
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict
+
 from models import Product, ProductVariant
 
-class OrderingParam(str, Enum):
+
+class OrderingParam(StrEnum):
     asc = "asc"
     desc = "desc"
 
-class SortingProducts(str, Enum):
+
+class SortingProducts(StrEnum):
     price = "price"
     rating = "rating"
     created_at = "created_at"
-    
-ProductsMap = {SortingProducts.price: ProductVariant.price,
-               SortingProducts.rating: Product.rating,
-               SortingProducts.created_at: Product.created_at}
+
+
+ProductsMap = {
+    SortingProducts.price: ProductVariant.price,
+    SortingProducts.rating: Product.rating,
+    SortingProducts.created_at: Product.created_at,
+}
+
 
 class SearchingProduct(BaseModel):
     id: int
@@ -32,7 +39,7 @@ class SearchingProduct(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    products: List[SearchingProduct]
+    products: list[SearchingProduct]
     has_more: bool
 
     model_config = ConfigDict(from_attributes=True)

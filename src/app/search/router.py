@@ -1,23 +1,34 @@
 from fastapi import APIRouter, Depends, Query
-from services.public import PublicService
+
 from core.depends import get_public_service
-from .schemas import OrderingParam, SortingProducts, SearchResponse
+from services.public import PublicService
+
+from .schemas import OrderingParam, SearchResponse, SortingProducts
 
 router = APIRouter(tags=["Search"])
 
-@router.get('/search', status_code=200, response_model=SearchResponse)
-def search_products(q: str | None = Query(None),
-                    category_id: int | None = Query(None),
-                    min_price: float | None = Query(None),
-                    max_price: float | None = Query(None),
-                    sort: SortingProducts = Query(SortingProducts.rating),
-                    order: OrderingParam = Query(OrderingParam.desc),
-                    page: int = Query(1, ge=1),
-                    size: int = Query(30, ge=1, le=100),
-                    public_service: PublicService = Depends(get_public_service)
-                    ):
-    result, has_more = public_service.search_products(q=q, category_id=category_id,
-                                                      min_price=min_price, max_price=max_price,
-                                                      sort=sort, order=order, page=page, size=size)
+
+@router.get("/search", status_code=200, response_model=SearchResponse)
+def search_products(
+    q: str | None = Query(None),
+    category_id: int | None = Query(None),
+    min_price: float | None = Query(None),
+    max_price: float | None = Query(None),
+    sort: SortingProducts = Query(SortingProducts.rating),
+    order: OrderingParam = Query(OrderingParam.desc),
+    page: int = Query(1, ge=1),
+    size: int = Query(30, ge=1, le=100),
+    public_service: PublicService = Depends(get_public_service),
+):
+    result, has_more = public_service.search_products(
+        q=q,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        sort=sort,
+        order=order,
+        page=page,
+        size=size,
+    )
 
     return {"products": result, "has_more": has_more}

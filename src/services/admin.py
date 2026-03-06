@@ -1,15 +1,17 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from models.users import User, Seller
-from models.products import Product
-from models.orders import Order
-from models.reviews import Review
+
 from models.collections import Category
+from models.orders import Order
+from models.products import Product
+from models.reviews import Review
+from models.users import Seller, User
+from rules.order_rules import OrderStatus
 from rules.product_rules import ProductStatus
 from rules.seller_rules import SellerStatus
-from rules.order_rules import OrderStatus
 
-class AdminService():
+
+class AdminService:
     def __init__(self, db: Session, admin: User):
         self.db = db
         self.admin = admin
@@ -18,7 +20,7 @@ class AdminService():
         product = self.db.query(Product).filter(Product.id == product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
-        
+
     def block_product(self, product: Product):
         if product.status == ProductStatus.BLOCKED:
             return {"status": "Already blocked"}
@@ -35,7 +37,7 @@ class AdminService():
         seller = self.db.query(Seller).filter(Seller.id == seller_id).first()
         if not seller:
             raise HTTPException(status_code=404, detail="Seller not found")
-        
+
     def approve_seller(self, seller: Seller):
         if seller.status == SellerStatus.ACTIVE:
             return {"status": "Already approved"}
@@ -53,7 +55,7 @@ class AdminService():
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         return order
-    
+
     def complete_order(self, order: Order):
         if order.status != OrderStatus.PAID:
             return {"status": "Order not paid yet, you cannot complete it"}
@@ -69,9 +71,9 @@ class AdminService():
     def review_by_id(self, review_id: int):
         review = self.db.query(Review).filter(Review.id == review_id).first()
         if not review:
-            raise HTTPException(status_code=404, detail="Review not found")    
+            raise HTTPException(status_code=404, detail="Review not found")
         return review
-    
+
     def delete_review(self, review: Review):
         self.db.delete(review)
         self.db.commit()
@@ -84,6 +86,6 @@ class AdminService():
         category = self.db.query(Category).filter(Category.id == category_id).first()
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
-        
-        product.category=category
+
+        product.category = category
         self.db.commit()

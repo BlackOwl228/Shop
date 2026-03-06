@@ -1,15 +1,15 @@
+import secrets
+import uuid
+from random import randint
 
 from faker import Faker
 
+from src.core.db import SessionLocal
+from src.models.products import Product, ProductVariant
+from src.models.users import Seller, User
+
 fake = Faker("ru_RU")
 
-import uuid, secrets
-from random import randint
-
-from src.models.users import User, Seller
-from src.models.products import Product, ProductVariant
-from app.auth.security import hash_password
-from src.core.db import SessionLocal
 
 def seed_users(count, batch_size=1000):
     db = SessionLocal()
@@ -22,8 +22,8 @@ def seed_users(count, batch_size=1000):
                 batch.append(
                     User(
                         name=f"{fake.name()} {randint(1, 100)}",
-                        email="fake"+secrets.token_hex(10)+"@gmail.com",
-                        hashed_password=f"{uuid.uuid4()}"
+                        email="fake" + secrets.token_hex(10) + "@gmail.com",
+                        hashed_password=f"{uuid.uuid4()}",
                     )
                 )
             db.bulk_save_objects(batch)
@@ -36,8 +36,8 @@ def seed_users(count, batch_size=1000):
             for j in range(min(batch_size, count - i)):
                 batch.append(
                     Seller(
-                        user_id=i+j+1,
-                        company_name=f"{fake.color_name()} {fake.word().capitalize()} {randint(1, 100)}",
+                        user_id=i + j + 1,
+                        company_name=f"{fake.color_name()} {fake.word().capitalize()} {randint(1, 100)}",  # noqa: E501
                     )
                 )
             db.bulk_save_objects(batch)
@@ -46,6 +46,7 @@ def seed_users(count, batch_size=1000):
     finally:
         db.close()
 
+
 def seed_products(count, batch_size=5000):
     db = SessionLocal()
 
@@ -53,7 +54,7 @@ def seed_products(count, batch_size=5000):
         for i in range(0, count, batch_size):
             batch = []
 
-            for j in range(min(batch_size, count - i)):
+            for _ in range(min(batch_size, count - i)):
                 batch.append(
                     Product(
                         name=f"{fake.word().capitalize()}",
@@ -65,6 +66,7 @@ def seed_products(count, batch_size=5000):
         db.commit()
     finally:
         db.close()
+
 
 def seed_variants(count, batch_size=5000):
     db = SessionLocal()
@@ -86,6 +88,7 @@ def seed_variants(count, batch_size=5000):
         db.commit()
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed_users(1000)

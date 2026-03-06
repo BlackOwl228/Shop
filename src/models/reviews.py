@@ -1,7 +1,8 @@
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, SmallInteger, String, func
 from sqlalchemy.orm import relationship
-from sqlalchemy import String, Integer, Column, SmallInteger, ForeignKey, DateTime, func
 
 from core.db import Base
+
 
 class Review(Base):
     __tablename__ = "reviews"

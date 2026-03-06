@@ -1,4 +1,4 @@
-'''
+"""
 import sys
 from pathlib import Path
 root_dir = Path(__file__).parent.parent
@@ -55,7 +55,8 @@ def test_change_product(client, seller):
     assert response.status_code == 204
 
 def test_change_variant(client, seller):
-    response = client.patch("/products/1/variants/1", data={"name": "Test_variant_v2", "price": 15000})
+    response = client.patch("/products/1/variants/1",
+                            data={"name": "Test_variant_v2", "price": 15000})
     assert response.status_code == 204
 
 def test_delete_variant(client, seller):
@@ -75,15 +76,13 @@ def test_cancel_order(client):
 def test_complete_order(client):
     response = client.patch("/orders/1/complete")
     assert response.status_code == 204
-'''
+"""
+
 
 def test_login_success(client, buyer):
     response = client.post(
         "/login",
-        data={
-            "username": "example@gmail.com",
-            "password": "password"
-        },
+        data={"username": "example@gmail.com", "password": "password"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     assert response.status_code == 201
