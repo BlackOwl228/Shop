@@ -44,7 +44,7 @@ class ProductService:
             raise HTTPException(status_code=404, detail="Variant of product not found")
         return variant
 
-    def _create_image_path(self, variant, product_id, variant_id, image):
+    def _create_image_path(variant, product_id, variant_id, image):
         if image is not None:
             img_path = os.path.join("media", "product", str(product_id), str(variant_id))
             ext = image.filename.split(".")[-1]

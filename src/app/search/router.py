@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from core.depends import get_public_service
 from services.public import PublicService
 
-from .schemas import OrderingParam, SearchResponse, SortingProducts
+from .schemas import ProductSorting, SearchResponse
 
 router = APIRouter(tags=["Search"])
 
@@ -12,10 +12,10 @@ router = APIRouter(tags=["Search"])
 def search_products(
     q: str | None = Query(None),
     category_id: int | None = Query(None),
+    seller_id: int | None = Query(None),
     min_price: float | None = Query(None),
     max_price: float | None = Query(None),
-    sort: SortingProducts = Query(SortingProducts.rating),
-    order: OrderingParam = Query(OrderingParam.desc),
+    sort: ProductSorting = Query(ProductSorting.relevance),
     page: int = Query(1, ge=1),
     size: int = Query(30, ge=1, le=100),
     public_service: PublicService = Depends(get_public_service),
@@ -23,10 +23,10 @@ def search_products(
     result, has_more = public_service.search_products(
         q=q,
         category_id=category_id,
+        seller_id=seller_id,
         min_price=min_price,
         max_price=max_price,
         sort=sort,
-        order=order,
         page=page,
         size=size,
     )

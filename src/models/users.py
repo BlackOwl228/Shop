@@ -17,8 +17,6 @@ class User(Base):
     created_at = Column(DateTime, default=func.now())
     is_admin = Column(Boolean, default=False)
 
-    email_token = relationship("EmailToken", back_populates="user", uselist=False)
-    tokens = relationship("RefreshToken", back_populates="user")
     orders = relationship("Order", back_populates="user")
     cart_items = relationship("CartItem", back_populates="user")
     favorite_products = relationship("Product", secondary=favorites, back_populates="favorited_by_user")

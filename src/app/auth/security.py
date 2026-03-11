@@ -1,6 +1,6 @@
+from argon2 import PasswordHasher
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from core.db import get_db
@@ -41,12 +41,15 @@ def get_current_user_cookie(
     return get_current_user_from_jwt(token, db)
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+ph = PasswordHasher()
 
 
 def hash_password(password: str):
-    return pwd_context.hash(password)
+    return ph.hash(password)
 
 
 def check_password(password: str, hashed_password: str):
-    return pwd_context.verify(password, hashed_password)
+    try:
+        return ph.verify(hashed_password, password)
+    except Exception:
+        return False

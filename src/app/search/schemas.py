@@ -6,21 +6,19 @@ from pydantic import BaseModel, ConfigDict
 from models import Product, ProductVariant
 
 
-class OrderingParam(StrEnum):
-    asc = "asc"
-    desc = "desc"
-
-
-class SortingProducts(StrEnum):
-    price = "price"
+class ProductSorting(StrEnum):
+    relevance = "relevance"
+    price_asc = "price_asc"
+    price_desc = "price_desc"
     rating = "rating"
-    created_at = "created_at"
+    newest = "newest"
 
 
-ProductsMap = {
-    SortingProducts.price: ProductVariant.price,
-    SortingProducts.rating: Product.rating,
-    SortingProducts.created_at: Product.created_at,
+ProductsSortingMap = {
+    ProductSorting.price_asc: ProductVariant.price.asc(),
+    ProductSorting.price_desc: ProductVariant.price.desc(),
+    ProductSorting.rating: Product.rating.desc(),
+    ProductSorting.newest: Product.created_at.desc(),
 }
 
 

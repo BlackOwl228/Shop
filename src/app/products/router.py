@@ -45,10 +45,12 @@ def create_variant(
 def get_product(
     product_id: int = Path(..., ge=1), public_service: PublicService = Depends(get_public_service)
 ):
+    product = public_service.get_product_cache(product_id)
+    if product is None:
+        product = public_service.get_full_product_by_id(product_id)
+        public_service.set_product_cache(product_id, product)
 
-    product = public_service.get_full_product_by_id(product_id)
-
-    return {"product": product, "variants": product.variants}
+    return product
 
 
 @router.patch("/{product_id}", status_code=204)

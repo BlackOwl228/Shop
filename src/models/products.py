@@ -10,6 +10,7 @@ from sqlalchemy import (
     Text,
     func,
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import relationship
 
 from core.db import Base
@@ -21,13 +22,14 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
-    rating = Column(Float, default=0.0, nullable=False)
+    rating = Column(Float, default=0.0, nullable=False, index=True)
     reviews_count = Column(Integer, default=0, nullable=False)
     description = Column(Text, nullable=True)
-    seller_id = Column(ForeignKey("sellers.id"), nullable=False)
-    category_id = Column(ForeignKey("categories.id"))
+    seller_id = Column(ForeignKey("sellers.id"), nullable=False, index=True)
+    category_id = Column(ForeignKey("categories.id"), index=True)
     status = Column(String(20), default="active")
     created_at = Column(DateTime, default=func.now())
+    search_vector = Column(TSVECTOR)
 
     variants = relationship("ProductVariant", back_populates="product")
     category = relationship("Category", back_populates="products")
@@ -41,7 +43,7 @@ class ProductVariant(Base):
 
     id = Column(Integer, primary_key=True)
     product_id = Column(ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
-    price = Column(Numeric(10, 2), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False, index=True)
     name = Column(String(32), nullable=False)
     stock = Column(Integer, nullable=False, default=0)
     image = Column(String(128), nullable=True)

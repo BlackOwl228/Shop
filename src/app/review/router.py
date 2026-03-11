@@ -5,7 +5,6 @@ from core.media import delete_image, save_image
 from services.public import PublicService
 from services.review import ReviewService
 
-from ..search.schemas import OrderingParam
 from .schemas import ReviewsResponse
 
 router = APIRouter(tags=["Review"])
@@ -35,12 +34,9 @@ def get_product_reviews(
     product_id: int = Path(...),
     page: int = Query(1, ge=1),
     size: int = Query(20, le=50),
-    order: OrderingParam = Query(OrderingParam.desc),
     public_service: PublicService = Depends(get_public_service),
 ):
-    reviews, has_more = public_service.get_reviews_to_product(
-        product_id=product_id, page=page, size=size, order=order
-    )
+    reviews, has_more = public_service.get_reviews_to_product(product_id=product_id, page=page, size=size)
 
     return {"reviews": reviews[:size], "has_more": has_more}
 

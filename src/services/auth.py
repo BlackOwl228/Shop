@@ -15,11 +15,6 @@ class AuthService:
         email_timedelta = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
         self.verify_email_time = datetime.now(UTC) + timedelta(hours=email_timedelta)
 
-    def user_by_id(self, user_id):
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-
     def user_by_email(self, email: str):
         user = self.db.query(User).filter(User.email == email).first()
         if not user:
@@ -49,11 +44,11 @@ class AuthService:
         user = User(name=name, email=email, hashed_password=hashed_password)
 
         self.db.add(user)
-        self.db.flush(user)
+        self.db.flush()
 
         return user
 
-    def check_login_data(self, login_data) -> list:
+    def check_login_data(self, login_data) -> tuple:
         try:
             login_data = LoginData.model_validate(
                 {"username": login_data.username, "password": login_data.password}

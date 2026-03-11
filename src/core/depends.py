@@ -6,7 +6,6 @@ from core.db import get_db
 from models.users import Seller, User
 from services.admin import AdminService
 from services.auth import AuthService
-from services.email import EmailService
 from services.favorites import FavoritesService
 from services.orders import OrderService
 from services.products import ProductService
@@ -26,10 +25,6 @@ def get_product_service(seller: Seller = Depends(get_current_seller), db: Sessio
 
 def get_token_service(db: Session = Depends(get_db)):
     return TokenService(db)
-
-
-def get_email_service(db: Session = Depends(get_db)):
-    return EmailService(db)
 
 
 def get_cart_service(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
