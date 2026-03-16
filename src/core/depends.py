@@ -1,18 +1,20 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.auth.security import get_current_admin, get_current_seller, get_current_user
-from core.db import get_db
-from models.users import Seller, User
-from services.admin import AdminService
-from services.auth import AuthService
-from services.favorites import FavoritesService
-from services.orders import OrderService
-from services.products import ProductService
-from services.public import PublicService
-from services.review import ReviewService
-from services.tokens import TokenService
-from services.users import UserService
+from src.app.auth.security import get_current_admin, get_current_seller, get_current_user
+from src.core.db import get_db, get_redis
+from src.core.redis import RedisClient
+from src.models.users import Seller, User
+from src.services.admin import AdminService
+from src.services.auth import AuthService
+from src.services.cart import CartService
+from src.services.favorites import FavoritesService
+from src.services.orders import OrderService
+from src.services.products import ProductService
+from src.services.public import PublicService
+from src.services.review import ReviewService
+from src.services.tokens import TokenService
+from src.services.users import UserService
 
 
 def get_auth_service(db: Session = Depends(get_db)):
@@ -23,12 +25,12 @@ def get_product_service(seller: Seller = Depends(get_current_seller), db: Sessio
     return ProductService(db, seller)
 
 
-def get_token_service(db: Session = Depends(get_db)):
-    return TokenService(db)
+def get_token_service(db: Session = Depends(get_db), redis: RedisClient = Depends(get_redis)):
+    return TokenService(db, redis)
 
 
 def get_cart_service(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return ProductService(db, user)
+    return CartService(db, user)
 
 
 def get_review_service(author: User = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Form, Path
 
-from core.depends import get_cart_service
-from services.cart import CartService
+from src.core.depends import get_cart_service
+from src.services.cart import CartService
 
 from .schemas import CartResponse
 
@@ -25,7 +25,7 @@ def get_my_cart(cart_service: CartService = Depends(get_cart_service)):
 
 
 @router.patch("/cart/{variant_id}", status_code=204)
-def change_quantity(
+def change_quantity_in_cart(
     variant_id: int = Path(...),
     quantity: int = Form(..., gt=0),
     cart_service: CartService = Depends(get_cart_service),
@@ -36,7 +36,7 @@ def change_quantity(
 
 
 @router.delete("/cart/{variant_id}", status_code=204)
-def remove_product_from_cart(
+def delete_product_from_cart(
     variant_id: int = Path(...), cart_service: CartService = Depends(get_cart_service)
 ):
     item = cart_service.get_cart_item(variant_id)

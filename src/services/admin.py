@@ -1,14 +1,14 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from models.collections import Category
-from models.orders import Order
-from models.products import Product
-from models.reviews import Review
-from models.users import Seller, User
-from rules.order_rules import OrderStatus
-from rules.product_rules import ProductStatus
-from rules.seller_rules import SellerStatus
+from src.models.collections import Category
+from src.models.orders import Order
+from src.models.products import Product
+from src.models.reviews import Review
+from src.models.users import Seller, User
+from src.rules.order_rules import OrderStatus
+from src.rules.product_rules import ProductStatus
+from src.rules.seller_rules import SellerStatus
 
 
 class AdminService:
@@ -20,6 +20,8 @@ class AdminService:
         product = self.db.query(Product).filter(Product.id == product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
+
+        return product
 
     def block_product(self, product: Product):
         if product.status == ProductStatus.BLOCKED:
@@ -37,6 +39,8 @@ class AdminService:
         seller = self.db.query(Seller).filter(Seller.id == seller_id).first()
         if not seller:
             raise HTTPException(status_code=404, detail="Seller not found")
+
+        return seller
 
     def approve_seller(self, seller: Seller):
         if seller.status == SellerStatus.ACTIVE:
@@ -87,5 +91,5 @@ class AdminService:
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
 
-        product.category = category
+        product.category_id = category.id
         self.db.commit()

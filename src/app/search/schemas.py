@@ -3,7 +3,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from models import Product, ProductVariant
+from src.models.products import Product, ProductVariant
 
 
 class ProductSorting(StrEnum):

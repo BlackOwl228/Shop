@@ -1,100 +1,63 @@
+import fakeredis
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from app.auth.security import get_current_admin, get_current_seller, get_current_user
-from src.core.db import Base, get_db
+from src.core.db import Base, get_redis
+from src.core.redis import RedisClient
 from src.main import app
-from src.models.users import Seller, User
-from src.rules.seller_rules import SellerStatus
+from tests.fixtures import *
 
-engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
-Session = sessionmaker(bind=engine)
+engine = create_engine("postgresql+psycopg://postgres:postgres@localhost:5432/test")
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
-def reset_db(Base=Base):
+@pytest.fixture(scope="session", autouse=True)
+def setup_database():
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
 
 
-@pytest.fixture(scope="function")
-def db_session():
-    reset_db()
-    session = Session()
-    try:
-        yield session
-    finally:
-        session.close()
+@pytest.fixture()
+def connection():
+    connection = engine.connect()
+    transaction = connection.begin()
+
+    yield connection
+
+    transaction.rollback()
+    connection.close()
 
 
-@pytest.fixture(scope="function")
-def client(db_session):
-    def _get_db():
-        yield db_session
+@pytest.fixture()
+def db_session(connection):
 
-    app.dependency_overrides[get_db] = _get_db
+    session = SessionLocal(bind=connection)
 
-    yield TestClient(app)
+    nested = connection.begin_nested()
 
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(sess, trans):
+        nonlocal nested
+        if not nested.is_active:
+            nested = connection.begin_nested()
 
-@pytest.fixture
-def buyer(db_session):
-    user = User(
-        name="Test_user",
-        email="example@gmail.com",
-        email_verified=True,
-        hashed_password="$2b$12$jbYqnmH4Bl4.NnrM7QU7teUwQu.u9n/r6N061unUQPF4VVIFnSocq",
-        is_admin=False,
-    )
-    db_session.add(user)
-    db_session.commit()
+    yield session
 
-    def override_user():
-        return user
-
-    app.dependency_overrides[get_current_user] = override_user
-
-    return user
+    session.close()
 
 
-@pytest.fixture
-def seller(db_session):
-    user = User(
-        name="Test_seller",
-        email="example2@gmail.com",
-        email_verified=True,
-        hashed_password="password",
-        is_admin=False,
-    )
-    seller = Seller(user_id=2, company_name="Test", status=SellerStatus.ACTIVE)
-    db_session.add_all([user, seller])
-    db_session.commit()
+@pytest.fixture()
+def fake_redis():
+    redis = fakeredis.FakeRedis(decode_responses=True)
+    redis_client = RedisClient(redis)
 
-    def override_seller():
-        return seller
+    def _get_redis():
+        return redis_client
 
-    app.dependency_overrides[get_current_seller] = override_seller
+    app.dependency_overrides[get_redis] = _get_redis
 
-    return seller
+    yield redis_client
 
-
-@pytest.fixture
-def admin(db_session):
-    admin = User(
-        name="Test_admin",
-        email="example3@gmail.com",
-        email_verified=True,
-        hashed_password="admin",
-        is_admin=True,
-    )
-    db_session.add(admin)
-    db_session.commit()
-
-    def override_admin():
-        return admin
-
-    app.dependency_overrides[get_current_admin] = override_admin
-
-    return admin
+    redis.flushall()
+    app.dependency_overrides.clear()

@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from jose import jwt
 from sqlalchemy.orm import Session, joinedload
 
-from models.users import User
+from src.models.users import User
 
 SecretKey = os.getenv("SECRET_KEY")
 Algorithm = "HS256"

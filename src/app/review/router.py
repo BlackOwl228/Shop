@@ -1,9 +1,9 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Path, Query, UploadFile
 
-from core.depends import get_public_service, get_review_service
-from core.media import delete_image, save_image
-from services.public import PublicService
-from services.review import ReviewService
+from src.core.depends import get_public_service, get_review_service
+from src.core.media import delete_image, save_image
+from src.services.public import PublicService
+from src.services.review import ReviewService
 
 from .schemas import ReviewsResponse
 
@@ -21,10 +21,10 @@ async def create_review(
     ),
     review_service: ReviewService = Depends(get_review_service),
 ):
-    review, path = review_service.create_review(product_id=product_id, rating=rating, text=text, image=image)
+    review = review_service.create_review(product_id=product_id, rating=rating, text=text, image=image)
 
-    if path:
-        background_tasks.add_task(save_image, image, path)
+    if image is not None:
+        background_tasks.add_task(save_image, image, review.image)
 
     return {"status": "Review created", "review_id": review.id}
 
@@ -52,10 +52,10 @@ def edit_review(
     ),
     review_service: ReviewService = Depends(get_review_service),
 ):
-    path = review_service.change_review(review_id=review_id, rating=rating, text=text, image=image)
+    review = review_service.change_review(review_id=review_id, rating=rating, text=text, image=image)
 
-    if path:
-        background_tasks.add_task(save_image, image, path)
+    if image is not None:
+        background_tasks.add_task(save_image, image, review.image)
 
 
 @router.delete("/reviews/{review_id}", status_code=204)

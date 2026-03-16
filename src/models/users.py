@@ -1,8 +1,8 @@
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
 
-from core.db import Base
-from models.collections import favorites
+from src.core.db import Base
+from src.models.collections import favorites
 
 
 class User(Base):

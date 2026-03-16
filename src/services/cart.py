@@ -3,10 +3,10 @@ from decimal import Decimal
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from models.collections import CartItem
-from models.products import ProductVariant
-from models.users import User
-from rules.product_rules import available_products
+from src.models.collections import CartItem
+from src.models.products import ProductVariant
+from src.models.users import User
+from src.rules.product_rules import available_products
 
 
 class CartService:
@@ -14,10 +14,10 @@ class CartService:
         self.db = db
         self.user = user
 
-    def get_cart_item(self, user_id: int, variant_id: int):
+    def get_cart_item(self, variant_id: int):
         item = (
             self.db.query(CartItem)
-            .filter(CartItem.user_id == user_id, CartItem.variant_id == variant_id)
+            .filter(CartItem.user_id == self.user.id, CartItem.variant_id == variant_id)
             .first()
         )
         if not item:
@@ -37,7 +37,7 @@ class CartService:
         except Exception as e:
             raise HTTPException(status_code=400, detail="Product already in cart") from e
 
-    def get_user_cart(self):
+    def get_user_cart(self) -> tuple:
         items = (
             available_products(self.db.query(CartItem).join(ProductVariant))
             .filter(CartItem.user_id == self.user.id)

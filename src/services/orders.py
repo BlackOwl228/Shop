@@ -3,13 +3,13 @@ from decimal import Decimal
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.orders.schemas import OrderLine, ProductItemIn
-from integrations.stripe import confirm_payment, create_payment  # noqa: F401
-from models.orders import Order, OrderItem
-from models.products import ProductVariant
-from models.users import User
-from rules.order_rules import can_cancel_order, can_complete_order
-from rules.product_rules import available_products
+from src.app.orders.schemas import OrderLine, ProductItemIn
+from src.integrations.stripe import confirm_payment, create_payment  # noqa: F401
+from src.models.orders import Order, OrderItem
+from src.models.products import ProductVariant
+from src.models.users import User
+from src.rules.order_rules import can_cancel_order, can_complete_order
+from src.rules.product_rules import available_products
 
 
 class OrderService:
@@ -67,8 +67,7 @@ class OrderService:
         self.db.commit()
 
     def _validate_and_build_lines(
-        items: list[ProductItemIn],
-        variants_map: dict[int, ProductVariant],
+        self, items: list[ProductItemIn], variants_map: dict[int, ProductVariant]
     ) -> list[OrderLine]:
         lines = []
 
@@ -93,7 +92,7 @@ class OrderService:
 
         return lines
 
-    def _apply_products(order: Order, lines: list[OrderLine]):
+    def _apply_products(self, order: Order, lines: list[OrderLine]):
         total = Decimal(0)
         for line in lines:
             order_item = OrderItem(

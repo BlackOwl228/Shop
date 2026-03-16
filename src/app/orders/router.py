@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Path
 
-from core.depends import get_order_service
-from services.orders import OrderService
+from src.core.depends import get_order_service
+from src.services.orders import OrderService
 
 from .schemas import CreatingOrderResponse, ProductItemIn
 

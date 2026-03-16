@@ -3,11 +3,11 @@ import os
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from models.collections import Category
-from models.products import Product, ProductVariant
-from models.users import Seller
-from rules.product_rules import ProductStatus
-from rules.seller_rules import can_interact_product
+from src.models.collections import Category
+from src.models.products import Product, ProductVariant
+from src.models.users import Seller
+from src.rules.product_rules import ProductStatus
+from src.rules.seller_rules import can_interact_product
 
 
 class ProductService:
@@ -44,12 +44,11 @@ class ProductService:
             raise HTTPException(status_code=404, detail="Variant of product not found")
         return variant
 
-    def _create_image_path(variant, product_id, variant_id, image):
-        if image is not None:
-            img_path = os.path.join("media", "product", str(product_id), str(variant_id))
-            ext = image.filename.split(".")[-1]
-            path = f"{img_path}.{ext}"
-            variant.image = path
+    def _create_image_path(self, variant, product_id, variant_id, image):
+        img_path = os.path.join("media", "product", str(product_id), str(variant_id))
+        ext = image.filename.split(".")[-1]
+        path = f"{img_path}.{ext}"
+        variant.image = path
         return path
 
     def create_product(self, name, description):
@@ -79,10 +78,11 @@ class ProductService:
         self._check_interact()
         variant = ProductVariant(name=name, price=price, product_id=product_id, stock=stock)
         self.db.add(variant)
-        self.db.flush()
-        variant.image = self._create_image_path(
-            variant=variant, product_id=product_id, variant_id=variant.id, image=image
-        )
+        if image is not None:
+            self.db.flush()
+            variant.image = self._create_image_path(
+                variant=variant, product_id=product_id, variant_id=variant.id, image=image
+            )
         self.db.commit()
 
         return variant

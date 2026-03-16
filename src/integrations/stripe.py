@@ -1,7 +1,7 @@
 import stripe
 from fastapi import HTTPException
 
-from models.orders import Order
+from src.models.orders import Order
 
 
 def create_payment(amount: int):

@@ -2,25 +2,16 @@ from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
-from app.products.schemas import ProductCartResponse
-from app.search.schemas import ProductSorting, ProductsSortingMap
-from core.db import cache_get, cache_set
-from models.collections import Category
-from models.products import Product, ProductVariant
-from models.reviews import Review
-from rules.product_rules import available_products
+from src.app.search.schemas import ProductSorting, ProductsSortingMap
+from src.models.collections import Category
+from src.models.products import Product, ProductVariant
+from src.models.reviews import Review
+from src.rules.product_rules import available_products
 
 
 class PublicService:
     def __init__(self, db: Session):
         self.db = db
-
-    def set_product_cache(self, id: int, data):
-        product_dict = ProductCartResponse.model_validate(data).model_dump()
-        cache_set(f"products:{id}", product_dict, ttl=600)
-
-    def get_product_cache(self, id: int):
-        return cache_get(f"products:{id}")
 
     def get_reviews_to_product(self, product_id: int, page: int, size: int):
         product = self.db.query(Product).filter(Product.id == product_id).first()
@@ -67,14 +58,14 @@ class PublicService:
         size: int,
     ):
         query = available_products(self.db.query(ProductVariant).options(joinedload(ProductVariant.product)))
-        if q:
+        if q is not None:
             ts_query = func.plainto_tsquery("russian", q)
             rank = func.ts_rank(Product.search_vector, ts_query)
             if sort == ProductSorting.relevance:
                 query = query.order_by(rank.desc(), Product.rating.desc())
             else:
                 query = query.order_by(ProductsSortingMap[sort])
-        else:
+        elif sort != ProductSorting.relevance:
             query = query.order_by(ProductsSortingMap[sort])
 
         if category_id:

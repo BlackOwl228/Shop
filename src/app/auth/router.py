@@ -1,10 +1,10 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, Path
 from fastapi.security import OAuth2PasswordRequestForm
 
-from core.depends import get_auth_service, get_token_service
-from integrations.gmail import send_message  # noqa: F401
-from services.auth import AuthService
-from services.tokens import TokenService
+from src.core.depends import get_auth_service, get_token_service
+from src.integrations.gmail import send_message  # noqa: F401
+from src.services.auth import AuthService
+from src.services.tokens import TokenService
 
 from .schemas import LoginResponse, RefreshResponse, UserEmail, UserName, UserPassword
 
@@ -50,18 +50,18 @@ def login_user(
     }
 
 
-@router.delete("/logout", status_code=204)
+@router.post("/logout", status_code=204)
 def logout_user(token: str = Form(...), token_service: TokenService = Depends(get_token_service)):
-    token_service.delete_refresh_token(token)
+    token_service.delete_refresh_token(refresh_token=token)
 
 
 @router.post("/verify/{token}", status_code=204)
 def verify_email(token: str = Path(...), token_service: TokenService = Depends(get_token_service)):
-    token_service.verify_email_by_token(token)
+    token_service.verify_email_by_token(email_token=token)
 
 
-@router.post("/refresh", status_code=201, response_model=RefreshResponse)
+@router.post("/refresh", status_code=200, response_model=RefreshResponse)
 def refresh_token(token: str = Form(...), token_service: TokenService = Depends(get_token_service)):
-    user_id = token_service.check_refresh_token(token)
+    user_id = token_service.check_refresh_token(refresh_token=token)
 
     return {"access_token": token_service.create_access_token(user_id), "token_type": "bearer"}

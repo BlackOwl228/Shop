@@ -26,11 +26,15 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest",
+    "fakeredis",
     "ruff",
     "locust",
     "faker",
     "jinja2"
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 line-length = 110

@@ -1,6 +1,7 @@
 from sqlalchemy import (
     CheckConstraint,
     Column,
+    Computed,
     DateTime,
     Float,
     ForeignKey,
@@ -13,8 +14,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import relationship
 
-from core.db import Base
-from models.collections import favorites
+from src.core.db import Base
+from src.models.collections import favorites
 
 
 class Product(Base):
@@ -29,7 +30,7 @@ class Product(Base):
     category_id = Column(ForeignKey("categories.id"), index=True)
     status = Column(String(20), default="active")
     created_at = Column(DateTime, default=func.now())
-    search_vector = Column(TSVECTOR)
+    search_vector = Column(TSVECTOR, Computed("to_tsvector('russian', name)", persisted=True))
 
     variants = relationship("ProductVariant", back_populates="product")
     category = relationship("Category", back_populates="products")

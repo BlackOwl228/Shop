@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
-from core.depends import get_public_service
-from services.public import PublicService
+from src.core.depends import get_public_service
+from src.services.public import PublicService
 
 from .schemas import ProductSorting, SearchResponse
 

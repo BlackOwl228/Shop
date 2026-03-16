@@ -1,10 +1,10 @@
 from enum import StrEnum
 
-from models.orders import Order
+from src.models.orders import Order
 
 
 class OrderStatus(StrEnum):
-    CREATED = "created"
+    PENDING = "pending"
     PAID = "paid"
     COMPLETED = "completed"
     CANCELLED = "cancelled"  # Заказ отменен до оплаты, в будущем возможен возврат средств
@@ -15,4 +15,4 @@ def can_complete_order(order: Order):
 
 
 def can_cancel_order(order: Order):
-    return order.status == OrderStatus.CREATED
+    return order.status == OrderStatus.PENDING

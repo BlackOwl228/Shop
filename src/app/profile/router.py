@@ -1,11 +1,11 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
 
-from app.auth.security import get_current_user
-from core.depends import get_auth_service, get_user_service
-from core.media import save_image
-from models.users import User
-from services.auth import AuthService
-from services.users import UserService
+from src.app.auth.security import get_current_user
+from src.core.depends import get_auth_service, get_user_service
+from src.core.media import save_image
+from src.models.users import User
+from src.services.auth import AuthService
+from src.services.users import UserService
 
 from ..auth.schemas import UserName, UserPassword
 from .schemas import ProfilePesponse

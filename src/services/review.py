@@ -3,9 +3,9 @@ import os
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
-from models.products import Product
-from models.reviews import Review
-from models.users import User
+from src.models.products import Product
+from src.models.reviews import Review
+from src.models.users import User
 
 
 class ReviewService:
@@ -25,27 +25,25 @@ class ReviewService:
 
         return review
 
-    def _create_image_path(review: Review, image):
+    def _create_image_path(self, review: Review, image):
         img_path = os.path.join("media", "review", str(review.id))
         ext = image.filename.split(".")[-1]
         path = f"{img_path}.{ext}"
         review.image = path
 
-        return path
-
-    def _update_rating(product: Product, new_rating: int):
+    def _update_rating(self, product: Product, new_rating: int):
         total = product.rating * product.reviews_count
         total += new_rating
 
         product.reviews_count += 1
         product.rating = total / product.reviews_count
 
-    def _patch_rating(product: Product, old_rating: int, new_rating: int):
+    def _patch_rating(self, product: Product, old_rating: int, new_rating: int):
         product.rating = (
             product.rating * product.reviews_count - old_rating + new_rating
         ) / product.reviews_count
 
-    def _delete_rating(product: Product, review_rating: int):
+    def _delete_rating(self, product: Product, review_rating: int):
         product.reviews_count -= 1
         if product.reviews_count == 0:
             product.rating = 0
@@ -71,10 +69,10 @@ class ReviewService:
         self.db.add(review)
         self.db.flush()
         if image is not None:
-            image_path = self._create_image_path(review=review, image=image)
+            self._create_image_path(review=review, image=image)
         self.db.commit()
 
-        return review, image_path
+        return review
 
     def change_review(self, review_id: int, rating: int, text: str | None, image):
         review = self._review_by_id_and_author_id(review_id)
@@ -82,13 +80,13 @@ class ReviewService:
         if text is not None:
             review.text = text
         if image is not None:
-            image_path = self._create_image_path(review=review, image=image)
+            self._create_image_path(review=review, image=image)
         if rating != review.rating:
             self._patch_rating(product=review.product, old_rating=review.rating, new_rating=rating)
             review.rating = rating
         self.db.commit()
 
-        return image_path
+        return review
 
     def delete_review(self, review_id: int):
         review = self._review_by_id_and_author_id(review_id)

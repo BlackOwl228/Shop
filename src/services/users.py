@@ -2,7 +2,7 @@ import os
 
 from sqlalchemy.orm import Session
 
-from models.users import User
+from src.models.users import User
 
 
 class UserService:

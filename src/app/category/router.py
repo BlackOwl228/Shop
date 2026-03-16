@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Path
 
-from core.depends import get_product_service, get_public_service
-from services.products import ProductService
-from services.public import PublicService
+from src.core.depends import get_product_service, get_public_service
+from src.services.products import ProductService
+from src.services.public import PublicService
 
 from .schemas import CategoriesPesponse
 

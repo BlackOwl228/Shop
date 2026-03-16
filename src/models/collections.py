@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship
 
-from core.db import Base
+from src.core.db import Base
 
 
 class Category(Base):

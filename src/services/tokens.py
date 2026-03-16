@@ -6,77 +6,73 @@ from fastapi import HTTPException
 from jose import jwt
 from sqlalchemy.orm import Session
 
-from core.db import redis_delete, redis_get, redis_set
-from models.users import User
+from src.core.redis import RedisClient, RedisKeys
+from src.models.users import User
 
-SecretKey = os.getenv("SECRET_KEY")
-Algorithm = "HS256"
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 EMAIL_TOKEN_EXPIRE_HOURS = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
 
 
 class TokenService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, redis: RedisClient):
         self.db = db
+        self.redis = redis
 
+    @staticmethod
     def create_access_token(user_id: int) -> str:
         expire = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
         payload = {"sub": str(user_id), "exp": expire, "iat": datetime.now(UTC)}
 
-        return jwt.encode(payload, SecretKey, algorithm=Algorithm)
+        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
+    @staticmethod
     def decode_access_token(token: str) -> int:
-        try:
-            payload = jwt.decode(
-                token,
-                SecretKey,
-                algorithms=[Algorithm],
-            )
-            user_id = payload.get("sub")
-            if user_id:
-                return int(payload["sub"])
-            else:
-                raise Exception
-        except Exception as e:
-            raise HTTPException(status_code=401, detail="Token isn't correct") from e
-
-    def create_refresh_token(self, user_id: int) -> str:
-        token = secrets.token_urlsafe(32)
-        key = "token:refresh:" + token
-        token_ttl = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS).seconds
-        redis_set(key, user_id, ttl=token_ttl)
-
-        return token
-
-    def delete_refresh_token(self, token: str):
-        key = "token:refresh:" + token
-        refresh_token = redis_get(key)
-        if not refresh_token:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        redis_delete(token)
+        return int(user_id)
 
-    def check_refresh_token(self, token: str):
-        key = "token:refresh:" + token
-        user_id_from_refresh = redis_get(key)
+    def create_refresh_token(self, user_id: int) -> str:
+        refresh_token = secrets.token_urlsafe(32)
+        key = RedisKeys.refresh_token(refresh_token)
+        token_ttl = REFRESH_TOKEN_EXPIRE_DAYS * 86400
+        self.redis.set(key, user_id, ttl=token_ttl)
+
+        return refresh_token
+
+    def delete_refresh_token(self, refresh_token: str):
+        key = RedisKeys.refresh_token(refresh_token)
+        stored_token = self.redis.get(key)
+        if not stored_token:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        self.redis.delete(key)
+
+    def check_refresh_token(self, refresh_token: str):
+        key = RedisKeys.refresh_token(refresh_token)
+        user_id_from_refresh = self.redis.get(key)
         if not user_id_from_refresh:
             raise HTTPException(status_code=401, detail="Wrong token, login again")
 
-        return user_id_from_refresh
+        return int(user_id_from_refresh)
 
     def create_email_token(self, user_id: int):
-        token = secrets.token_urlsafe(32)
-        key = "token:email:" + token
-        token_ttl = timedelta(hours=EMAIL_TOKEN_EXPIRE_HOURS).seconds
-        redis_set(key, user_id, ttl=token_ttl)
+        email_token = secrets.token_urlsafe(32)
+        key = RedisKeys.email_token(email_token)
+        token_ttl = EMAIL_TOKEN_EXPIRE_HOURS * 3600
+        self.redis.set(key, user_id, ttl=token_ttl)
 
-        return token
+        return email_token
 
-    def verify_email_by_token(self, token: str):
-        key = "token:email:" + token
-        user_id_from_email = redis_get(key)
+    def verify_email_by_token(self, email_token: str):
+        key = RedisKeys.email_token(email_token)
+        user_id_from_email = int(self.redis.get(key))
         if not user_id_from_email:
             raise HTTPException(status_code=404, detail="Token not found")
 
@@ -86,4 +82,4 @@ class TokenService:
         user.email_verified = True
         self.db.commit()
 
-        redis_delete(key)
+        self.redis.delete(key)

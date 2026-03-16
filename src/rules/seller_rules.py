@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from models.users import Seller
+from src.models.users import Seller
 
 
 class SellerStatus(StrEnum):

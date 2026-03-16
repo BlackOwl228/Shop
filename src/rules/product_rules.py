@@ -1,7 +1,7 @@
 from enum import StrEnum
 
-from models.products import Product, ProductVariant
-from models.users import Seller
+from src.models.products import Product, ProductVariant
+from src.models.users import Seller
 
 from .seller_rules import SellerStatus
 

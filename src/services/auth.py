@@ -4,9 +4,9 @@ from datetime import UTC, datetime, timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.auth.schemas import LoginData
-from app.auth.security import check_password, hash_password
-from models.users import Seller, User
+from src.app.auth.schemas import LoginData
+from src.app.auth.security import check_password, hash_password
+from src.models.users import Seller, User
 
 
 class AuthService:
@@ -26,7 +26,7 @@ class AuthService:
         if not check_password(password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Wrong data, try again")
 
-    def check_if_passwords_match(password: str, new_password: str):
+    def check_if_passwords_match(self, password: str, new_password: str):
         if password == new_password:
             return True
 

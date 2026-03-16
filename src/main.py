@@ -9,31 +9,34 @@ app = FastAPI()
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 #Роутеры для апи
-from app.admin import router as admin
-from app.auth import router as auth
-from app.cart import router as cart
-from app.category import router as category
-from app.orders import router as orders
-from app.products import router as products
-from app.profile import router as profile
-from app.review import router as review
-from app.search import router as search
+from src.app.admin import router as admin
+from src.app.auth import router as auth
+from src.app.cart import router as cart
+from src.app.category import router as category
+from src.app.favorites import router as favorites
+from src.app.orders import router as orders
+from src.app.products import router as products
+from src.app.profile import router as profile
+from src.app.review import router as review
+from src.app.search import router as search
 
+app.include_router(admin.router)
 app.include_router(auth.router)
+app.include_router(cart.router)
+app.include_router(category.router)
+app.include_router(favorites.router)
 app.include_router(orders.router)
 app.include_router(products.router)
 app.include_router(profile.router)
-app.include_router(search.router)
-app.include_router(cart.router)
-app.include_router(admin.router)
-app.include_router(category.router)
 app.include_router(review.router)
+app.include_router(search.router)
+
 
 import time
 
 from prometheus_client import make_asgi_app
 
-from core.metrics import REQUEST_COUNT, REQUEST_LATENCY
+from src.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
 
 @app.middleware("http")

@@ -1,9 +1,11 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Path, UploadFile
 
-from core.depends import get_product_service, get_public_service
-from core.media import delete_image, save_image  # noqa: F401
-from services.products import ProductService
-from services.public import PublicService
+from src.core.db import get_redis
+from src.core.depends import get_product_service, get_public_service
+from src.core.media import delete_image, save_image  # noqa: F401
+from src.core.redis import RedisClient, RedisKeys
+from src.services.products import ProductService
+from src.services.public import PublicService
 
 from .schemas import ProductCartResponse
 
@@ -33,7 +35,9 @@ def create_variant(
     ),
     product_service: ProductService = Depends(get_product_service),
 ):
-    variant = product_service.create_variant(name=name, price=price, stock=stock, image=image)
+    variant = product_service.create_variant(
+        product_id=product_id, name=name, price=price, stock=stock, image=image
+    )
 
     if image is not None:
         background_tasks.add_task(save_image, image, variant.image)
@@ -43,14 +47,19 @@ def create_variant(
 
 @router.get("/{product_id}", status_code=200, response_model=ProductCartResponse)
 def get_product(
-    product_id: int = Path(..., ge=1), public_service: PublicService = Depends(get_public_service)
+    product_id: int = Path(..., ge=1),
+    public_service: PublicService = Depends(get_public_service),
+    redis: RedisClient = Depends(get_redis),
 ):
-    product = public_service.get_product_cache(product_id)
+    product = redis.get_json(RedisKeys.product(product_id))
     if product is None:
         product = public_service.get_full_product_by_id(product_id)
-        public_service.set_product_cache(product_id, product)
+        value = ProductCartResponse.model_validate(
+            {"product": product, "variants": product.variants}
+        ).model_dump()
+        redis.set_json(RedisKeys.product(product.id), value, ttl=600)
 
-    return product
+    return {"product": product, "variants": product.variants}
 
 
 @router.patch("/{product_id}", status_code=204)

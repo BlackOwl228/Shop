@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from core.db import get_db
+from src.core.db import get_db
 
 from .token.access import get_admin_from_jwt, get_current_user_from_jwt, get_seller_from_jwt
 
