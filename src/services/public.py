@@ -1,8 +1,8 @@
-from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from src.app.search.schemas import ProductSorting, ProductsSortingMap
+from src.core.logs.exceptions import ProductNotFoundError
 from src.models.collections import Category
 from src.models.products import Product, ProductVariant
 from src.models.reviews import Review
@@ -16,7 +16,7 @@ class PublicService:
     def get_reviews_to_product(self, product_id: int, page: int, size: int):
         product = self.db.query(Product).filter(Product.id == product_id).first()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ProductNotFoundError(product_id=product_id)
 
         reviews = (
             self.db.query(Review)
@@ -39,7 +39,7 @@ class PublicService:
             .first()
         )
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ProductNotFoundError(product_id=product_id)
 
         return product
 

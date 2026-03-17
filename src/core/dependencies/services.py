@@ -1,9 +1,9 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from src.app.auth.security import get_current_admin, get_current_seller, get_current_user
-from src.core.db import get_db, get_redis
-from src.core.redis import RedisClient
+from src.core.dependencies.users import get_current_admin, get_current_seller, get_current_user
+from src.core.resources.db import get_db, get_redis
+from src.core.resources.redis import RedisClient
 from src.models.users import Seller, User
 from src.services.admin import AdminService
 from src.services.auth import AuthService

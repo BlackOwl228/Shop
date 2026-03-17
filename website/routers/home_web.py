@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from src.core.db import get_db
+from src.core.resources.db import get_db
 from src.models.products import Product
 
 from ..config import templates

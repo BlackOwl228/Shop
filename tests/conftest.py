@@ -3,10 +3,10 @@ import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
-from src.core.db import Base, get_redis
-from src.core.redis import RedisClient
+from src.core.resources.db import Base, get_redis
+from src.core.resources.redis import RedisClient
 from src.main import app
-from tests.fixtures import *
+from tests.fixtures import *  # noqa: F403
 
 engine = create_engine("postgresql+psycopg://postgres:postgres@localhost:5432/test")
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)

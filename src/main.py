@@ -1,14 +1,21 @@
+import time
+
 from dotenv import load_dotenv
-
-load_dotenv()
-
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import make_asgi_app
+
+from src.core.logs.exceptions import AppError
+from src.core.logs.handlers import app_exception_handler
+from src.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
+
+
+load_dotenv()
 
 app = FastAPI()
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
-#Роутеры для апи
+# Роутеры для апи
 from src.app.admin import router as admin
 from src.app.auth import router as auth
 from src.app.cart import router as cart
@@ -32,32 +39,25 @@ app.include_router(review.router)
 app.include_router(search.router)
 
 
-import time
-
-from prometheus_client import make_asgi_app
-
-from src.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
-
-
 @app.middleware("http")
 async def metrics_middleware(request, call_next):
     start = time.time()
     response = await call_next(request)
     duration = time.time() - start
 
-    REQUEST_COUNT.labels(
-        request.method,
-        request.url.path,
-        response.status_code
-    ).inc()
+    REQUEST_COUNT.labels(request.method, request.url.path, response.status_code).inc()
 
     REQUEST_LATENCY.observe(duration)
 
     return response
 
+
 app.mount("/metrics", make_asgi_app())
 
-#Роутеры для сайта
+
+app.add_exception_handler(AppError, app_exception_handler)
+
+# Роутеры для сайта
 """
 from ..website.routers import home_web, profile_web, auth_web, cart_web, checkout_web, search_web
 
@@ -69,7 +69,7 @@ app.include_router(checkout_web.router)
 app.include_router(search_web.router)
 """
 
-import uvicorn
+if __name__ == "__main__":
+    import uvicorn
 
-if __name__ == '__main__':
-    uvicorn.run("main:app", host='127.0.0.1', port=8000, reload=True)
+    uvicorn.run("src.main:app", host="127.0.0.1", port=8000, reload=True)

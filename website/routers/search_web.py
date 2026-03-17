@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from src.app.search.schemas import OrderingParam, ProductsMap, SortingProducts
-from src.core.db import get_db
+from src.core.resources.db import get_db
 from src.models.products import Product
 from src.rules.product_rules import available_products
 

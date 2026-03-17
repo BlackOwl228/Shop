@@ -21,8 +21,15 @@ class RedisClient:
     def delete(self, key):
         self.redis.delete(key)
 
+    def incr(self, key):
+        self.redis.incr(key)
+
 
 class RedisKeys:
+    @staticmethod
+    def rate_limit_user(user_id: int) -> str:
+        return f"rate:limit:user:{user_id}"
+
     @staticmethod
     def product(product_id: int) -> str:
         return f"products:{product_id}"

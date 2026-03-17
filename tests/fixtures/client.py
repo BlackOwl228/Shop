@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from src.app.auth.security import get_current_admin, get_current_seller, get_current_user
-from src.core.db import get_db
+from src.core.dependencies.users import get_current_admin, get_current_seller, get_current_user
+from src.core.resources.db import get_db
 from src.main import app
 
 

@@ -2,11 +2,11 @@ import os
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from fastapi import HTTPException
 from jose import jwt
 from sqlalchemy.orm import Session
 
-from src.core.redis import RedisClient, RedisKeys
+from src.core.logs.exceptions import InvalidTokenError, UserNotFoundError
+from src.core.resources.redis import RedisClient, RedisKeys
 from src.models.users import User
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -34,7 +34,7 @@ class TokenService:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise InvalidTokenError()
 
         return int(user_id)
 
@@ -50,7 +50,7 @@ class TokenService:
         key = RedisKeys.refresh_token(refresh_token)
         stored_token = self.redis.get(key)
         if not stored_token:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise InvalidTokenError()
 
         self.redis.delete(key)
 
@@ -58,7 +58,7 @@ class TokenService:
         key = RedisKeys.refresh_token(refresh_token)
         user_id_from_refresh = self.redis.get(key)
         if not user_id_from_refresh:
-            raise HTTPException(status_code=401, detail="Wrong token, login again")
+            raise InvalidTokenError()
 
         return int(user_id_from_refresh)
 
@@ -74,11 +74,11 @@ class TokenService:
         key = RedisKeys.email_token(email_token)
         user_id_from_email = int(self.redis.get(key))
         if not user_id_from_email:
-            raise HTTPException(status_code=404, detail="Token not found")
+            raise InvalidTokenError()
 
         user = self.db.query(User).filter(User.id == user_id_from_email).first()
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise UserNotFoundError(user_id=user_id_from_email)
         user.email_verified = True
         self.db.commit()
 

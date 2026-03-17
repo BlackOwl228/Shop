@@ -21,7 +21,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from core.db import Base
+from src.core.resources.db import Base
 from src.models.collections import CartItem, Category, favorites
 from src.models.orders import Order, OrderItem
 from src.models.products import Product, ProductVariant

@@ -33,8 +33,10 @@ dev = [
     "jinja2"
 ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra -q"
 
 [tool.ruff]
 line-length = 110

@@ -1,6 +1,6 @@
 import pytest
 
-from src.core.redis import RedisKeys
+from src.core.resources.redis import RedisKeys
 
 
 @pytest.fixture

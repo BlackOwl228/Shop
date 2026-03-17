@@ -1,6 +1,12 @@
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from src.core.logs.exceptions import (
+    CategoryNotFoundError,
+    OrderNotFoundError,
+    ProductNotFoundError,
+    ReviewNotFoundError,
+    SellerNotFoundError,
+)
 from src.models.collections import Category
 from src.models.orders import Order
 from src.models.products import Product
@@ -19,7 +25,7 @@ class AdminService:
     def product_by_id(self, product_id: int):
         product = self.db.query(Product).filter(Product.id == product_id).first()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ProductNotFoundError(product_id=product_id)
 
         return product
 
@@ -38,7 +44,7 @@ class AdminService:
     def seller_by_id(self, seller_id):
         seller = self.db.query(Seller).filter(Seller.id == seller_id).first()
         if not seller:
-            raise HTTPException(status_code=404, detail="Seller not found")
+            raise SellerNotFoundError(seller_id=seller_id)
 
         return seller
 
@@ -57,7 +63,7 @@ class AdminService:
     def order_by_id(self, order_id: int):
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if not order:
-            raise HTTPException(status_code=404, detail="Order not found")
+            raise OrderNotFoundError(order_id=order_id)
         return order
 
     def complete_order(self, order: Order):
@@ -75,7 +81,7 @@ class AdminService:
     def review_by_id(self, review_id: int):
         review = self.db.query(Review).filter(Review.id == review_id).first()
         if not review:
-            raise HTTPException(status_code=404, detail="Review not found")
+            raise ReviewNotFoundError(review_id=review_id)
         return review
 
     def delete_review(self, review: Review):
@@ -89,7 +95,7 @@ class AdminService:
     def product_to_category(self, product: Product, category_id: int):
         category = self.db.query(Category).filter(Category.id == category_id).first()
         if not category:
-            raise HTTPException(status_code=404, detail="Category not found")
+            raise CategoryNotFoundError(category_id=category_id)
 
         product.category_id = category.id
         self.db.commit()

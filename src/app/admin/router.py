@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Path
 
-from src.core.depends import get_admin_service
+from src.core.dependencies.services import get_admin_service
 from src.services.admin import AdminService
 
 router = APIRouter(prefix="/admin", tags=["Admin"])

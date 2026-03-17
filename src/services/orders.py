@@ -1,9 +1,17 @@
 from decimal import Decimal
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from src.app.orders.schemas import OrderLine, ProductItemIn
+from src.core.logs.exceptions import (
+    InvalidOrderStateError,
+    NotYourOrderError,
+    OrderAlreadyPaidError,
+    OrderNotFoundError,
+    VariantOutOfStockError,
+    VariantPriceChangedError,
+    VariantUnavailableError,
+)
 from src.integrations.stripe import confirm_payment, create_payment  # noqa: F401
 from src.models.orders import Order, OrderItem
 from src.models.products import ProductVariant
@@ -20,9 +28,9 @@ class OrderService:
     def test_confirm_payment(self, order_id: int):
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if not order:
-            raise HTTPException(status_code=404, detail="Order not found")
+            raise OrderNotFoundError(order_id=order_id)
         if order.status == "paid":
-            return HTTPException(status_code=400, detail="Order already paid")
+            return OrderAlreadyPaidError(order_id=order_id)
 
         confirm_payment(order)
         self.db.commit()
@@ -47,21 +55,25 @@ class OrderService:
         return order
 
     def cancel_order_by_id(self, order_id: int):
-        order = self.db.query(Order).filter(Order.id == order_id, Order.buyer_id == self.buyer.id).first()
+        order = self.db.query(Order).filter(Order.id == order_id).first()
         if not order:
-            raise HTTPException(status_code=404, detail="Order not found or not yours")
+            raise OrderNotFoundError(order_id=order_id)
+        if order.buyer_id != self.buyer.id:
+            raise NotYourOrderError(order_id=order_id, user_id=self.buyer.id)
         if not can_cancel_order(order):
-            raise HTTPException(status_code=400, detail="You cannot cancel order now")
+            raise InvalidOrderStateError(order_id=order_id, order_status=order.status)
 
         order.status = "canceled"
         self.db.commit()
 
     def complete_order_by_id(self, order_id: int):
-        order = self.db.query(Order).filter(Order.id == order_id, Order.buyer_id == self.buyer.id).first()
+        order = self.db.query(Order).filter(Order.id == order_id).first()
         if not order:
-            raise HTTPException(status_code=404, detail="Order not found or not yours")
+            raise OrderNotFoundError(order_id=order_id)
+        if order.buyer_id != self.buyer.id:
+            raise NotYourOrderError(order_id=order_id, buyer_id=self.buyer.id)
         if not can_complete_order(order):
-            raise HTTPException(status_code=400, detail="You cannot compete order before pay")
+            raise InvalidOrderStateError(order_id=order_id, order_status=order.status)
 
         order.status = "completed"
         self.db.commit()
@@ -74,13 +86,13 @@ class OrderService:
         for item in items:
             variant = variants_map.get(item.variant_id)
             if not variant:
-                raise HTTPException(400, "Variant unavailable")
+                raise VariantUnavailableError(variant_id=item.variant_id)
 
             if variant.price != item.client_price:
-                raise HTTPException(409, "Price changed")
+                raise VariantPriceChangedError(variant_id=variant.id, actual_price=variant.price)
 
             if variant.stock < item.quantity:
-                raise HTTPException(409, "Out of stock")
+                raise VariantOutOfStockError(variant_id=variant.id, available_stock=variant.stock)
 
             lines.append(
                 OrderLine(

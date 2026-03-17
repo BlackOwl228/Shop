@@ -1,11 +1,11 @@
+from app.auth.security import check_password, hash_password
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.auth.security import check_password, hash_password
 from src.app.auth.token.access import create_access_token
 from src.app.auth.token.refresh import create_refresh_token
-from src.core.db import get_db
+from src.core.resources.db import get_db
 from src.models.tokens import RefreshToken
 from src.models.users import User
 

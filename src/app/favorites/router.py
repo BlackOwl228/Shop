@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Path
 
-from src.core.depends import get_current_user, get_favorites_service
+from src.core.dependencies.services import get_favorites_service
+from src.core.dependencies.users import get_current_user
 from src.models.users import User
 from src.services.favorites import FavoritesService
 

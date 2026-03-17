@@ -1,8 +1,14 @@
 import os
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from src.core.logs.exceptions import (
+    CategoryNotFoundError,
+    NotYourProductError,
+    ProductInteractionForbiddenError,
+    ProductNotFoundError,
+    VariantNotFoundError,
+)
 from src.models.collections import Category
 from src.models.products import Product, ProductVariant
 from src.models.users import Seller
@@ -17,7 +23,7 @@ class ProductService:
 
     def _check_interact(self):
         if not can_interact_product(self.seller):
-            raise HTTPException(status_code=403, detail="You cannot interact with products now")
+            raise ProductInteractionForbiddenError(seller_id=self.seller.id)
 
     def _product_by_id_and_seller_id(self, product_id):
         product = (
@@ -26,7 +32,7 @@ class ProductService:
             .first()
         )
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ProductNotFoundError(product_id=product_id)
         return product
 
     def _variant_by_ids(self, product_id, variant_id):
@@ -41,7 +47,7 @@ class ProductService:
             .first()
         )
         if not variant:
-            raise HTTPException(status_code=404, detail="Variant of product not found")
+            raise VariantNotFoundError(variant_id=variant_id)
         return variant
 
     def _create_image_path(self, variant, product_id, variant_id, image):
@@ -113,13 +119,13 @@ class ProductService:
     def change_product_category(self, product_id, category_id):
         product = self.db.query(Product).filter(Product.id == product_id).first()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ProductNotFoundError(product_id=product_id)
         if product.seller_id != self.seller.id:
-            raise HTTPException(status_code=403, detail="This is not your product")
+            raise NotYourProductError(seller_id=self.seller.id)
 
         category = self.db.query(Category).filter(Category.id == category_id).first()
         if not category:
-            raise HTTPException(status_code=404, detail="Category not found")
+            raise CategoryNotFoundError(category_id=category_id)
 
         product.category = category
         self.db.commit()

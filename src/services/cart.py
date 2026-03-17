@@ -1,8 +1,8 @@
 from decimal import Decimal
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from src.core.logs.exceptions import VariantAlreadyInCartError, VariantNotFoundError, VariantNotInCartError
 from src.models.collections import CartItem
 from src.models.products import ProductVariant
 from src.models.users import User
@@ -21,21 +21,21 @@ class CartService:
             .first()
         )
         if not item:
-            raise HTTPException(status_code=404, detail="Item not in cart")
+            raise VariantNotInCartError()
 
         return item
 
     def add_to_cart(self, variant_id: int, quantity: int):
         variant = self.db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
         if not variant:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise VariantNotFoundError(variant_id=variant_id)
 
         try:
             item = CartItem(user_id=self.user.id, variant_id=variant_id, quantity=quantity)
             self.db.add(item)
             self.db.commit()
         except Exception as e:
-            raise HTTPException(status_code=400, detail="Product already in cart") from e
+            raise VariantAlreadyInCartError() from e
 
     def get_user_cart(self) -> tuple:
         items = (

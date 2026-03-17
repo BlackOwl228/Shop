@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Path, Query, UploadFile
 
-from src.core.depends import get_public_service, get_review_service
-from src.core.media import delete_image, save_image
+from src.core.dependencies.services import get_public_service, get_review_service
+from src.services.media import delete_image, save_image
 from src.services.public import PublicService
 from src.services.review import ReviewService
 

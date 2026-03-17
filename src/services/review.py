@@ -1,8 +1,8 @@
 import os
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
+from src.core.logs.exceptions import ProductNotFoundError, ReviewConflictError, ReviewNotFoundError
 from src.models.products import Product
 from src.models.reviews import Review
 from src.models.users import User
@@ -21,7 +21,7 @@ class ReviewService:
             .first()
         )
         if not review:
-            raise HTTPException(status_code=404, detail="Review not found")
+            raise ReviewNotFoundError(review_id=review_id)
 
         return review
 
@@ -55,14 +55,14 @@ class ReviewService:
     def create_review(self, product_id: int, rating: int, text: str | None, image):
         product = self.db.query(Product).filter(Product.id == product_id).first()
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise ProductNotFoundError(product_id=product_id)
         ex_review = (
             self.db.query(Review)
             .filter(Review.author_id == self.author.id, Review.product_id == product_id)
             .first()
         )
         if ex_review:
-            raise HTTPException(status_code=400, detail="You cannot create more than 1 review")
+            raise ReviewConflictError(author_id=self.author.id)
 
         review = Review(product_id=product_id, author_id=self.author.id, rating=rating, text=text)
         self._update_rating(product, rating)

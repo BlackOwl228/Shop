@@ -1,8 +1,8 @@
+from app.auth.security import get_current_user_cookie
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from app.auth.security import get_current_user_cookie
-from src.core.db import get_db
+from src.core.resources.db import get_db
 from src.models.users import User
 
 from ..config import templates

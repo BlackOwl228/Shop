@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, Path
 from fastapi.security import OAuth2PasswordRequestForm
 
-from src.core.depends import get_auth_service, get_token_service
+from src.core.dependencies.services import get_auth_service, get_token_service
 from src.integrations.gmail import send_message  # noqa: F401
 from src.services.auth import AuthService
 from src.services.tokens import TokenService

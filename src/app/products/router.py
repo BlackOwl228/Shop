@@ -1,9 +1,9 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Path, UploadFile
 
-from src.core.db import get_redis
-from src.core.depends import get_product_service, get_public_service
-from src.core.media import delete_image, save_image  # noqa: F401
-from src.core.redis import RedisClient, RedisKeys
+from src.core.dependencies.services import get_product_service, get_public_service
+from src.core.resources.db import get_redis
+from src.core.resources.redis import RedisClient, RedisKeys
+from src.services.media import delete_image, save_image  # noqa: F401
 from src.services.products import ProductService
 from src.services.public import PublicService
 

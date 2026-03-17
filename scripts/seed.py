@@ -4,7 +4,7 @@ from random import randint
 
 from faker import Faker
 
-from src.core.db import SessionLocal
+from src.core.resources.db import SessionLocal
 from src.models.products import Product, ProductVariant
 from src.models.users import Seller, User
 

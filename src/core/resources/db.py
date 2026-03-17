@@ -6,7 +6,7 @@ from redis import Redis
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from src.core.redis import RedisClient
+from src.core.resources.redis import RedisClient
 
 load_dotenv()
 

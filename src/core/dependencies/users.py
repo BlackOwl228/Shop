@@ -1,11 +1,10 @@
-from argon2 import PasswordHasher
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from src.core.db import get_db
-
-from .token.access import get_admin_from_jwt, get_current_user_from_jwt, get_seller_from_jwt
+from src.core.logs.exceptions import InvalidTokenError
+from src.core.resources.db import get_db
+from src.core.security import get_admin_from_jwt, get_current_user_from_jwt, get_seller_from_jwt
 
 oauth_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
@@ -37,19 +36,5 @@ def get_current_user_cookie(
 ):
     token = request.cookies.get("access_token")
     if not token:
-        raise HTTPException(status_code=401)
+        raise InvalidTokenError()
     return get_current_user_from_jwt(token, db)
-
-
-ph = PasswordHasher()
-
-
-def hash_password(password: str):
-    return ph.hash(password)
-
-
-def check_password(password: str, hashed_password: str):
-    try:
-        return ph.verify(hashed_password, password)
-    except Exception:
-        return False
