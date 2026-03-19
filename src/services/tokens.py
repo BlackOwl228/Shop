@@ -1,4 +1,3 @@
-import os
 import secrets
 from datetime import UTC, datetime, timedelta
 
@@ -7,13 +6,14 @@ from sqlalchemy.orm import Session
 
 from src.core.logs.exceptions import InvalidTokenError, UserNotFoundError
 from src.core.resources.redis import RedisClient, RedisKeys
+from src.core.settings import settings
 from src.models.users import User
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
-EMAIL_TOKEN_EXPIRE_HOURS = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
+VERIFICATION_EMAIL_TOKEN_HOURS = settings.verification_email_token_hours
 
 
 class TokenService:
@@ -65,7 +65,7 @@ class TokenService:
     def create_email_token(self, user_id: int):
         email_token = secrets.token_urlsafe(32)
         key = RedisKeys.email_token(email_token)
-        token_ttl = EMAIL_TOKEN_EXPIRE_HOURS * 3600
+        token_ttl = VERIFICATION_EMAIL_TOKEN_HOURS * 3600
         self.redis.set(key, user_id, ttl=token_ttl)
 
         return email_token

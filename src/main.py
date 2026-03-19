@@ -1,6 +1,6 @@
+import os
 import time
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import make_asgi_app
@@ -10,9 +10,9 @@ from src.core.logs.handlers import app_exception_handler
 from src.core.metrics import REQUEST_COUNT, REQUEST_LATENCY
 
 
-load_dotenv()
-
 app = FastAPI()
+
+os.makedirs("media", exist_ok=True)
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # Роутеры для апи

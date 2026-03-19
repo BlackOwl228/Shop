@@ -1,6 +1,6 @@
+from app.auth.security import get_current_user_cookie
 from fastapi import APIRouter, Depends, Request
 
-from app.auth.security import get_current_user_cookie
 from src.models.users import User
 
 from ..config import templates

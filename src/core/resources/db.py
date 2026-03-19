@@ -1,16 +1,13 @@
-import os
 from collections.abc import Generator
 
-from dotenv import load_dotenv
 from redis import Redis
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from src.core.resources.redis import RedisClient
+from src.core.settings import settings
 
-load_dotenv()
-
-engine = create_engine(os.getenv("DATABASE_URL"))
+engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

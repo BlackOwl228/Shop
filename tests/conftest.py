@@ -5,10 +5,11 @@ from sqlalchemy.orm import sessionmaker
 
 from src.core.resources.db import Base, get_redis
 from src.core.resources.redis import RedisClient
+from src.core.settings import settings
 from src.main import app
 from tests.fixtures import *  # noqa: F403
 
-engine = create_engine("postgresql+psycopg://postgres:postgres@localhost:5432/test")
+engine = create_engine(settings.test_database_url)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
@@ -31,7 +32,6 @@ def connection():
 
 @pytest.fixture()
 def db_session(connection):
-
     session = SessionLocal(bind=connection)
 
     nested = connection.begin_nested()

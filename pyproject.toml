@@ -13,6 +13,7 @@ dependencies = [
     "httpx>=0.28.1",
     "prometheus-client>=0.24.1",
     "psycopg[binary]>=3.3.3",
+    "pydantic-settings>=2.13.1",
     "pydantic[email]>=2.12.5",
     "python-dotenv>=1.2.2",
     "python-jose>=3.5.0",
@@ -30,7 +31,8 @@ dev = [
     "ruff",
     "locust",
     "faker",
-    "jinja2"
+    "jinja2",
+    "pre-commit",
 ]
 
 [tool.pytest.ini_options]
@@ -40,7 +42,7 @@ addopts = "-ra -q"
 
 [tool.ruff]
 line-length = 110
-target-version = "py313"
+target-version = "py312"
 exclude = [
     "main.py",
     "__init__.py",

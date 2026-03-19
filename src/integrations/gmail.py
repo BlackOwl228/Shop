@@ -1,9 +1,10 @@
 import base64
-import os
 from email.mime.text import MIMEText
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+
+from src.core.settings import settings
 
 # Для тестов
 # from dotenv import load_dotenv
@@ -13,9 +14,9 @@ from googleapiclient.discovery import build
 def get_gmail_service():
     creds = Credentials(
         None,
-        refresh_token=os.environ.get("GOOGLE_REFRESH_TOKEN"),
-        client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+        refresh_token=settings.google_refresh_token,
+        client_id=settings.google_client_id,
+        client_secret=settings.google_client_secret,
         token_uri="https://oauth2.googleapis.com/token",
     )
     return build("gmail", "v1", credentials=creds)
@@ -24,7 +25,7 @@ def get_gmail_service():
 def create_message(to_email: str, subject: str, body_text: str):
     message = MIMEText(body_text)
     message["to"] = to_email
-    message["from"] = os.getenv("FROM_EMAIL")
+    message["from"] = settings.main_email
     message["subject"] = subject
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
     return {"raw": raw}

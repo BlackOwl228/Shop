@@ -1,9 +1,9 @@
 services:
-  web:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: python_app
+    container_name: backend
     ports:
       - "8000:8000"
     depends_on:
@@ -49,22 +49,35 @@ services:
       timeout: 3s
       retries: 5
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/logs:/var/log/nginx
+      - media_data:/nginx/media
+    depends_on:
+      - backend
+
   metrics:
     profiles:
       - "monitoring"
     image: prom/prometheus:latest
-    container_name: prometeus
+    container_name: prometheus
     restart: always
     ports:
       - "9090:9090"
     volumes:
-      - ./infra/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus.yml'
+      - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
 
-  grafics:
+  grafana:
     profiles:
       - "monitoring"
     image: grafana/grafana:latest
@@ -73,7 +86,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./infra/config/grafana.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./infra/grafana/grafana.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
       - grafana_data:/var/lib/grafana
     depends_on:
       - metrics

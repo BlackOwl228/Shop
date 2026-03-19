@@ -1,4 +1,3 @@
-import os
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
@@ -12,13 +11,14 @@ from src.core.logs.exceptions import (
     UserAlreadyExistsError,
 )
 from src.core.security import check_password, hash_password
+from src.core.settings import settings
 from src.models.users import Seller, User
 
 
 class AuthService:
     def __init__(self, db: Session):
         self.db = db
-        email_timedelta = int(os.getenv("VERIFICATION_EMAIL_TOKEN_HOURS"))
+        email_timedelta = settings.verification_email_token_hours
         self.verify_email_time = datetime.now(UTC) + timedelta(hours=email_timedelta)
 
     def user_by_email(self, email: str):
