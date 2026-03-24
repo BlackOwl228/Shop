@@ -15,7 +15,6 @@ from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import relationship
 
 from src.core.resources.db import Base
-from src.models.collections import favorites
 
 
 class Product(Base):
@@ -36,7 +35,7 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
     seller = relationship("Seller", back_populates="products")
     reviews = relationship("Review", back_populates="product")
-    favorited_by_user = relationship("User", secondary=favorites, back_populates="favorite_products")
+    in_favorites = relationship("Favorite", back_populates="product")
 
 
 class ProductVariant(Base):

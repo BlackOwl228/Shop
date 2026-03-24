@@ -1,6 +1,5 @@
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
+from dotenv import load_dotenv
+load_dotenv()
 
 from logging.config import fileConfig
 
@@ -20,15 +19,18 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 from src.core.settings import settings
 from src.core.resources.db import Base
-from src.models.collections import CartItem, Category, favorites
+from src.models.cart import CartItem
+from src.models.category import Category
+from src.models.favorites import Favorite
 from src.models.orders import Order, OrderItem
 from src.models.products import Product, ProductVariant
 from src.models.reviews import Review
 from src.models.users import User, Seller
 
 target_metadata = Base.metadata
+import os
 
-database_url = settings.database_url
+database_url = os.getenv("DATABASE_URL")
 if not database_url:
     raise RuntimeError("DATABASE_URL is not set")
 

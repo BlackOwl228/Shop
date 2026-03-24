@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Path
 
 from src.core.dependencies.services import get_order_service
+from src.core.dependencies.users import get_current_user
+from src.models.users import User
 from src.services.orders import OrderService
 
 from .schemas import CreatingOrderResponse, ProductItemIn
@@ -9,22 +11,38 @@ router = APIRouter(prefix="/orders", tags=["Order"])
 
 
 @router.post("", status_code=201, response_model=CreatingOrderResponse)
-def create_order(products: list[ProductItemIn], order_service: OrderService = Depends(get_order_service)):
-    order = order_service.create_order(products)
+def create_order(
+    products: list[ProductItemIn],
+    buyer: User = Depends(get_current_user),
+    order_service: OrderService = Depends(get_order_service),
+):
+    order = order_service.create_order(buyer_id=buyer.id, products=products)
 
     return {"order_id": order.id, "total_amount": order.total_price, "payment_secret": order.payment_intent}
 
 
 @router.patch("/{order_id}/cancel", status_code=201)
-def cancel_order(order_id: int = Path(..., ge=1), order_service: OrderService = Depends(get_order_service)):
-    order_service.cancel_order_by_id(order_id)
+def cancel_order(
+    order_id: int = Path(..., ge=1),
+    buyer: User = Depends(get_current_user),
+    order_service: OrderService = Depends(get_order_service),
+):
+    order = order_service.get(order_id=order_id)
+
+    order_service.cancel_order(order=order, buyer_id=buyer.id)
 
     return {"status": "Order {order.id} cancelled"}
 
 
 @router.patch("/{order_id}/complete", status_code=201)
-def complete_order(order_id: int = Path(..., ge=1), order_service: OrderService = Depends(get_order_service)):
-    order_service.complete_order_by_id(order_id)
+def complete_order(
+    order_id: int = Path(..., ge=1),
+    buyer: User = Depends(get_current_user),
+    order_service: OrderService = Depends(get_order_service),
+):
+    order = order_service.get(order_id=order_id)
+
+    order_service.complete_order(order=order, buyer_id=buyer.id)
 
     return {"status": "Order {order.id} completed"}
 

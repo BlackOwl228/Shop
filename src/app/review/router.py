@@ -1,8 +1,9 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Path, Query, UploadFile
 
-from src.core.dependencies.services import get_public_service, get_review_service
+from src.core.dependencies.services import get_review_service
+from src.core.dependencies.users import get_current_user
+from src.models.users import User
 from src.services.media import delete_image, save_image
-from src.services.public import PublicService
 from src.services.review import ReviewService
 
 from .schemas import ReviewsResponse
@@ -19,9 +20,12 @@ async def create_review(
     image: UploadFile | None = File(
         None, max_length=15 * 1024 * 1024, media_type=["image/png", "image/jpeg"]
     ),
+    author: User = Depends(get_current_user),
     review_service: ReviewService = Depends(get_review_service),
 ):
-    review = review_service.create_review(product_id=product_id, rating=rating, text=text, image=image)
+    review = review_service.create_review(
+        author_id=author.id, product_id=product_id, rating=rating, text=text, image=image
+    )
 
     if image is not None:
         background_tasks.add_task(save_image, image, review.image)
@@ -34,9 +38,9 @@ def get_product_reviews(
     product_id: int = Path(...),
     page: int = Query(1, ge=1),
     size: int = Query(20, le=50),
-    public_service: PublicService = Depends(get_public_service),
+    review_service: ReviewService = Depends(get_review_service),
 ):
-    reviews, has_more = public_service.get_reviews_to_product(product_id=product_id, page=page, size=size)
+    reviews, has_more = review_service.get_reviews_to_product(product_id=product_id, page=page, size=size)
 
     return {"reviews": reviews[:size], "has_more": has_more}
 
@@ -50,9 +54,12 @@ def edit_review(
     image: UploadFile | None = File(
         None, max_length=15 * 1024 * 1024, media_type=["image/png", "image/jpeg"]
     ),
+    author: User = Depends(get_current_user),
     review_service: ReviewService = Depends(get_review_service),
 ):
-    review = review_service.change_review(review_id=review_id, rating=rating, text=text, image=image)
+    review = review_service.change_review(
+        author_id=author.id, review_id=review_id, rating=rating, text=text, image=image
+    )
 
     if image is not None:
         background_tasks.add_task(save_image, image, review.image)
@@ -62,9 +69,10 @@ def edit_review(
 def delete_review(
     background_tasks: BackgroundTasks,
     review_id: int = Path(...),
+    author: User = Depends(get_current_user),
     review_service: ReviewService = Depends(get_review_service),
 ):
-    image_path = review_service.delete_review(review_id)
+    image_path = review_service.delete_review(author_id=author.id, review_id=review_id)
 
     if image_path:
         background_tasks.add_task(delete_image, image_path)

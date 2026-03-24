@@ -1,33 +1,18 @@
 from sqlalchemy.orm import Session
 
-from src.core.logs.exceptions import (
-    CategoryNotFoundError,
-    OrderNotFoundError,
-    ProductNotFoundError,
-    ReviewNotFoundError,
-    SellerNotFoundError,
-)
-from src.models.collections import Category
+from src.models.category import Category
 from src.models.orders import Order
 from src.models.products import Product
 from src.models.reviews import Review
-from src.models.users import Seller, User
+from src.models.users import Seller
 from src.rules.order_rules import OrderStatus
 from src.rules.product_rules import ProductStatus
 from src.rules.seller_rules import SellerStatus
 
 
 class AdminService:
-    def __init__(self, db: Session, admin: User):
+    def __init__(self, db: Session):
         self.db = db
-        self.admin = admin
-
-    def product_by_id(self, product_id: int):
-        product = self.db.query(Product).filter(Product.id == product_id).first()
-        if not product:
-            raise ProductNotFoundError(product_id=product_id)
-
-        return product
 
     def block_product(self, product: Product):
         if product.status == ProductStatus.BLOCKED:
@@ -41,13 +26,6 @@ class AdminService:
         product.status = ProductStatus.ACTIVE
         self.db.commit()
 
-    def seller_by_id(self, seller_id):
-        seller = self.db.query(Seller).filter(Seller.id == seller_id).first()
-        if not seller:
-            raise SellerNotFoundError(seller_id=seller_id)
-
-        return seller
-
     def approve_seller(self, seller: Seller):
         if seller.status == SellerStatus.ACTIVE:
             return {"status": "Already approved"}
@@ -59,12 +37,6 @@ class AdminService:
             return {"status": "Already suspended"}
         seller.status = SellerStatus.SUSPENDED
         self.db.commit()
-
-    def order_by_id(self, order_id: int):
-        order = self.db.query(Order).filter(Order.id == order_id).first()
-        if not order:
-            raise OrderNotFoundError(order_id=order_id)
-        return order
 
     def complete_order(self, order: Order):
         if order.status != OrderStatus.PAID:
@@ -78,12 +50,6 @@ class AdminService:
         order.status = OrderStatus.CANCELLED
         self.db.commit()
 
-    def review_by_id(self, review_id: int):
-        review = self.db.query(Review).filter(Review.id == review_id).first()
-        if not review:
-            raise ReviewNotFoundError(review_id=review_id)
-        return review
-
     def delete_review(self, review: Review):
         self.db.delete(review)
         self.db.commit()
@@ -92,10 +58,6 @@ class AdminService:
         self.db.add(Category(name=name))
         self.db.commit()
 
-    def product_to_category(self, product: Product, category_id: int):
-        category = self.db.query(Category).filter(Category.id == category_id).first()
-        if not category:
-            raise CategoryNotFoundError(category_id=category_id)
-
+    def product_to_category(self, product: Product, category: Category):
         product.category_id = category.id
         self.db.commit()

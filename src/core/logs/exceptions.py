@@ -57,6 +57,14 @@ class NotYourOrderError(ForbiddenError):
         self.user_id = user_id
 
 
+class NotYourReviewError(ForbiddenError):
+    message = "This is not your review"
+
+    def __init__(self, review_id: int, user_id: int):
+        self.review_id = review_id
+        self.user_id = user_id
+
+
 class ProductInteractionForbiddenError(ForbiddenError):
     message = "You cannot interact with products now"
 

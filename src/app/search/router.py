@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
-from src.core.dependencies.services import get_public_service
-from src.services.public import PublicService
+from src.core.dependencies.services import get_search_service
+from src.services.search import SearchService
 
 from .schemas import ProductSorting, SearchResponse
 
@@ -18,9 +18,9 @@ def search_products(
     sort: ProductSorting = Query(ProductSorting.relevance),
     page: int = Query(1, ge=1),
     size: int = Query(30, ge=1, le=100),
-    public_service: PublicService = Depends(get_public_service),
+    search_service: SearchService = Depends(get_search_service),
 ):
-    result, has_more = public_service.search_products(
+    result, has_more = search_service.search_products(
         q=q,
         category_id=category_id,
         seller_id=seller_id,

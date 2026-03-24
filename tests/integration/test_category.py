@@ -5,4 +5,4 @@ def test_get_all_categories(client, category):
 
 def test_add_product_to_category(client, product, category):
     response = client.post(f"/products/{product.id}/categories/{category.id}")
-    assert response.status_code == 204
+    assert response.status_code == 201

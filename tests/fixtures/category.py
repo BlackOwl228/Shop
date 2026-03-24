@@ -1,6 +1,6 @@
 import pytest
 
-from src.models.collections import Category
+from src.models.category import Category
 
 
 @pytest.fixture()

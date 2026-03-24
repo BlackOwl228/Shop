@@ -8,7 +8,7 @@ COPY pyproject.toml uv.lock ./
 
 RUN uv sync --no-dev --frozen --no-cache-dir
 
-COPY src src
+COPY src migrations alembic.ini ./
 
 ENV PATH="/app/.venv/bin:$PATH"
 

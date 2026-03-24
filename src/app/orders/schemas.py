@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from src.models.products import ProductVariant
+
 
 class ProductItemIn(BaseModel):
     variant_id: int
@@ -8,7 +10,7 @@ class ProductItemIn(BaseModel):
 
 
 class OrderLine:
-    def __init__(self, variant, quantity: int, unit_price: int):
+    def __init__(self, variant: ProductVariant, quantity: int, unit_price: int):
         self.variant = variant
         self.quantity = quantity
         self.unit_price = unit_price

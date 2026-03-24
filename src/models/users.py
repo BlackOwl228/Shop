@@ -2,7 +2,6 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, f
 from sqlalchemy.orm import relationship
 
 from src.core.resources.db import Base
-from src.models.collections import favorites
 
 
 class User(Base):
@@ -19,7 +18,7 @@ class User(Base):
 
     orders = relationship("Order", back_populates="user")
     cart_items = relationship("CartItem", back_populates="user")
-    favorite_products = relationship("Product", secondary=favorites, back_populates="favorited_by_user")
+    favorites = relationship("Favorite", back_populates="user")
     reviews = relationship("Review", back_populates="author")
 
     seller = relationship("Seller", back_populates="user", uselist=False)

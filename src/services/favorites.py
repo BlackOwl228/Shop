@@ -2,35 +2,32 @@ from sqlalchemy.orm import Session
 
 from src.core.logs.exceptions import (
     ProductAlreadyInFavoritesError,
-    ProductNotFoundError,
     ProductNotInFavoritesError,
 )
-from src.models.products import Product
-from src.models.users import User
+from src.models.favorites import Favorite
+from src.repos.favorites import FavoritesRepo
 
 
 class FavoritesService:
-    def __init__(self, db: Session, user: User):
-        self.db = db
-        self.user = user
+    def __init__(self, db: Session):
+        self.repo = FavoritesRepo(db)
 
-    def product_by_id(self, product_id: int):
-        product = self.db.query(Product).filter(Product.id == product_id).first()
-        if not product:
-            raise ProductNotFoundError(product_id=product_id)
-
-        return product
-
-    def add_to_favorites(self, product: Product):
-        if product in self.user.favorite_products:
+    def add_to_favorites(self, user_id: int, product_id: int):
+        old_item = self.repo.get(user_id=user_id, product_id=product_id)
+        if old_item:
             raise ProductAlreadyInFavoritesError()
 
-        self.user.favorite_products.append(product)
-        self.db.commit()
+        item = Favorite(user_id=user_id, product_id=product_id)
+        self.repo.create(item)
+        self.repo.commit()
 
-    def delete_from_favorites(self, product: Product):
-        if product not in self.user.favorite_products:
+    def get_favorites(self, user_id: int):
+        return self.repo.get_all(user_id=user_id)
+
+    def delete_from_favorites(self, user_id: int, product_id: int):
+        item = self.repo.get(user_id=user_id, product_id=product_id)
+        if not item:
             raise ProductNotInFavoritesError()
 
-        self.user.favorite_products.remove(product)
-        self.db.commit()
+        self.repo.delete(item)
+        self.repo.commit()

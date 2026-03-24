@@ -19,8 +19,12 @@ def get_profile(user: User = Depends(get_current_user)):
 
 
 @router.patch("/name", status_code=200)
-def change_name(new_name: UserName = Form(...), user_service: UserService = Depends(get_user_service)):
-    user_service.change_name(new_name)
+def change_name(
+    new_name: UserName = Form(...),
+    user: User = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    user_service.change_name(user=user, new_name=new_name)
 
     return {"status": "Name was changed", "new_name": new_name}
 
@@ -29,9 +33,10 @@ def change_name(new_name: UserName = Form(...), user_service: UserService = Depe
 async def change_avatar(
     background_tasks: BackgroundTasks,
     avatar: UploadFile = File(..., max_length=15 * 1024 * 1024, media_type=["image/png", "image/jpeg"]),
+    user: User = Depends(get_current_user),
     user_service: UserService = Depends(get_user_service),
 ):
-    path = user_service.create_path_to_avatar(avatar)
+    path = user_service.create_path_to_avatar(user=user, avatar=avatar)
 
     background_tasks.add_task(save_image, avatar, path)
 
@@ -40,14 +45,18 @@ async def change_avatar(
 def change_password(
     password: UserPassword = Form(...),
     new_password: UserPassword = Form(...),
-    auth_service: AuthService = Depends(get_auth_service),
     user: User = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+    user_service: UserService = Depends(get_user_service),
 ):
-    auth_service.check_if_passwords_match(password=password, new_password=new_password)
+    if auth_service.check_if_passwords_match(password=password, new_password=new_password):
+        return {"status": "Passwords match"}
 
     auth_service.verify_password(user=user, password=password)
 
-    auth_service.change_password(user=user, new_password=new_password)
+    hashed_password = auth_service.hash_password(password=password)
+
+    user_service.change_password(user=user, hashed_password=hashed_password)
 
     return {"status": "Password was changed"}
 
@@ -60,11 +69,11 @@ def get_my_orders(user: User = Depends(get_current_user)):
 @router.post("/seller-request", status_code=201)
 def create_seller_request(
     company_name: str = Form(..., max_length=128),
-    auth_service: AuthService = Depends(get_auth_service),
     user: User = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service),
 ):
-    auth_service.check_old_seller_request(user)
+    user_service.check_old_seller_request(user=user)
 
-    auth_service.create_seller_request(user=user, company_name=company_name)
+    user_service.create_seller_request(user=user, company_name=company_name)
 
     return {"status": "Request was created, wait for approve"}

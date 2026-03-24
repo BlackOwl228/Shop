@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 from src.core.logs.exceptions import AppError
 from src.core.logs.logging import logger
+from src.core.metrics import ERROR_COUNT
 
 
 async def app_exception_handler(request: Request, exc: AppError):
@@ -12,6 +13,8 @@ async def app_exception_handler(request: Request, exc: AppError):
         level = logger.warning
 
     level(f"Error on {request.url.path}: {exc.message} | details: {exc.__dict__}")
+
+    ERROR_COUNT.labels(status=exc.status_code).inc()
 
     return JSONResponse(
         status_code=exc.status_code,

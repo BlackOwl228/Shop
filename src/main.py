@@ -51,7 +51,6 @@ async def metrics_middleware(request, call_next):
 
     return response
 
-
 app.mount("/metrics", make_asgi_app())
 
 

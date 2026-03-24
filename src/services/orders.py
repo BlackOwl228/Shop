@@ -15,68 +15,65 @@ from src.core.logs.exceptions import (
 from src.integrations.stripe import confirm_payment, create_payment  # noqa: F401
 from src.models.orders import Order, OrderItem
 from src.models.products import ProductVariant
-from src.models.users import User
+from src.repos.orders import OrderRepo
+from src.repos.products import ProductRepo
 from src.rules.order_rules import can_cancel_order, can_complete_order
-from src.rules.product_rules import available_products
 
 
 class OrderService:
-    def __init__(self, db: Session, buyer: User):
-        self.db = db
-        self.buyer = buyer
+    def __init__(self, db: Session):
+        self.repo = OrderRepo(db)
 
     def test_confirm_payment(self, order_id: int):
-        order = self.db.query(Order).filter(Order.id == order_id).first()
+        order = self.repo.get(order_id=order_id)
         if not order:
             raise OrderNotFoundError(order_id=order_id)
         if order.status == "paid":
             return OrderAlreadyPaidError(order_id=order_id)
 
         confirm_payment(order)
-        self.db.commit()
+        self.repo.commit()
         return order
 
-    def create_order(self, products: list[ProductItemIn]) -> Order:
+    def create_order(self, buyer_id: int, products: list[ProductItemIn]) -> Order:
         variant_ids = [item.variant_id for item in products]
 
-        variants = (
-            available_products(self.db.query(ProductVariant)).filter(ProductVariant.id.in_(variant_ids)).all()
-        )
+        variants = ProductRepo(self.repo.db).get_available_variants_by_ids(variant_ids=variant_ids)
         variants_map = {v.id: v for v in variants}
-        order_lines = self._validate_and_build_lines(products, variants_map)
+        order_lines = self._validate_and_build_lines(items=products, variants_map=variants_map)
 
-        order = self._apply_products(Order(buyer_id=self.buyer.id), order_lines)
+        order = self._apply_products(Order(buyer_id=buyer_id), order_lines)
 
         # order.payment_intent = create_payment(int(total_amount*100))
         # ВРЕМЕННАЯ ЗАМЕНА СТРАЙП
         order.payment_intent = "sjfew3y42iq820RWEUIDOSXCI"
-        self.db.add(order)
-        self.db.commit()
+        self.repo.create(order)
+        self.repo.commit()
         return order
 
-    def cancel_order_by_id(self, order_id: int):
-        order = self.db.query(Order).filter(Order.id == order_id).first()
+    def get(self, order_id: int):
+        order = self.repo.get(order_id=order_id)
         if not order:
             raise OrderNotFoundError(order_id=order_id)
-        if order.buyer_id != self.buyer.id:
-            raise NotYourOrderError(order_id=order_id, user_id=self.buyer.id)
+        return order
+
+    def cancel_order(self, order: Order, buyer_id: int):
+        if order.buyer_id != buyer_id:
+            raise NotYourOrderError(order_id=order.id, user_id=buyer_id)
         if not can_cancel_order(order):
-            raise InvalidOrderStateError(order_id=order_id, order_status=order.status)
+            raise InvalidOrderStateError(order_id=order.id, order_status=order.status)
 
         order.status = "canceled"
-        self.db.commit()
+        self.repo.commit()
 
-    def complete_order_by_id(self, order_id: int):
-        order = self.db.query(Order).filter(Order.id == order_id).first()
-        if not order:
-            raise OrderNotFoundError(order_id=order_id)
-        if order.buyer_id != self.buyer.id:
-            raise NotYourOrderError(order_id=order_id, buyer_id=self.buyer.id)
+    def complete_order(self, order: Order, buyer_id: int):
+        if order.buyer_id != buyer_id:
+            raise NotYourOrderError(order_id=order.id, user_id=buyer_id)
         if not can_complete_order(order):
-            raise InvalidOrderStateError(order_id=order_id, order_status=order.status)
+            raise InvalidOrderStateError(order_id=order.id, order_status=order.status)
 
         order.status = "completed"
-        self.db.commit()
+        self.repo.commit()
 
     def _validate_and_build_lines(
         self, items: list[ProductItemIn], variants_map: dict[int, ProductVariant]

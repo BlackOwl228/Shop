@@ -1,11 +1,13 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Path, UploadFile
 
-from src.core.dependencies.services import get_product_service, get_public_service
+from src.core.dependencies.services import get_product_service
+from src.core.dependencies.users import get_current_seller
+from src.core.metrics import CACHE_HITS, CACHE_MISSES
 from src.core.resources.db import get_redis
 from src.core.resources.redis import RedisClient, RedisKeys
+from src.models.users import Seller
 from src.services.media import delete_image, save_image  # noqa: F401
 from src.services.products import ProductService
-from src.services.public import PublicService
 
 from .schemas import ProductCartResponse
 
@@ -16,9 +18,10 @@ router = APIRouter(prefix="/products", tags=["Product"])
 def create_product(
     name: str = Form(..., min_length=3, max_length=255),
     description: str | None = Form(None, max_length=500),
+    seller: Seller = Depends(get_current_seller),
     product_service: ProductService = Depends(get_product_service),
 ):
-    product = product_service.create_product(name=name, description=description)
+    product = product_service.create_product(seller=seller, name=name, description=description)
 
     return {"status": "created", "product_id": product.id}
 
@@ -33,10 +36,11 @@ def create_variant(
     image: UploadFile | None = File(
         None, max_length=15 * 1024 * 1024, media_type=["image/png", "image/jpeg"]
     ),
+    seller: Seller = Depends(get_current_seller),
     product_service: ProductService = Depends(get_product_service),
 ):
     variant = product_service.create_variant(
-        product_id=product_id, name=name, price=price, stock=stock, image=image
+        seller=seller, product_id=product_id, name=name, price=price, stock=stock, image=image
     )
 
     if image is not None:
@@ -48,16 +52,19 @@ def create_variant(
 @router.get("/{product_id}", status_code=200, response_model=ProductCartResponse)
 def get_product(
     product_id: int = Path(..., ge=1),
-    public_service: PublicService = Depends(get_public_service),
+    product_service: ProductService = Depends(get_product_service),
     redis: RedisClient = Depends(get_redis),
 ):
     product = redis.get_json(RedisKeys.product(product_id))
     if product is None:
-        product = public_service.get_full_product_by_id(product_id)
+        product = product_service.get_full_product_by_id(product_id)
         value = ProductCartResponse.model_validate(
             {"product": product, "variants": product.variants}
         ).model_dump()
         redis.set_json(RedisKeys.product(product.id), value, ttl=600)
+        CACHE_MISSES.inc()
+    else:
+        CACHE_HITS.inc()
 
     return {"product": product, "variants": product.variants}
 
@@ -67,9 +74,10 @@ def change_product(
     product_id: int = Path(..., ge=1),
     name: str | None = Form(None, min_length=3, max_length=255),
     description: str | None = Form(None, max_length=500),
+    seller: Seller = Depends(get_current_seller),
     product_service: ProductService = Depends(get_product_service),
 ):
-    product_service.change_product(product_id=product_id, name=name, description=description)
+    product_service.change_product(seller=seller, product_id=product_id, name=name, description=description)
 
 
 @router.patch("/{product_id}/variants/{variant_id}", status_code=204)
@@ -83,10 +91,17 @@ def change_variant(
     image: UploadFile | None = File(
         None, max_length=15 * 1024 * 1024, media_type=["image/png", "image/jpeg"]
     ),
+    seller: Seller = Depends(get_current_seller),
     product_service: ProductService = Depends(get_product_service),
 ):
     variant = product_service.change_variant(
-        product_id=product_id, variant_id=variant_id, name=name, price=price, stock=stock, image=image
+        seller=seller,
+        product_id=product_id,
+        variant_id=variant_id,
+        name=name,
+        price=price,
+        stock=stock,
+        image=image,
     )
 
     if image is not None:
@@ -98,16 +113,19 @@ def change_stock(
     product_id: int = Path(...),
     variant_id: int = Path(...),
     stock_delta: int = Form(...),
+    seller: Seller = Depends(get_current_seller),
     product_service: ProductService = Depends(get_product_service),
 ):
-    product_service.change_stock(product_id=product_id, variant_id=variant_id, stock_delta=stock_delta)
+    product_service.change_stock(seller=seller, variant_id=variant_id, stock_delta=stock_delta)
 
 
 @router.delete("/{product_id}", status_code=204)
 def delete_product(
-    product_id: int = Path(..., ge=1), product_service: ProductService = Depends(get_product_service)
+    product_id: int = Path(..., ge=1),
+    seller: Seller = Depends(get_current_seller),
+    product_service: ProductService = Depends(get_product_service),
 ):
-    product_service.delete_product(product_id=product_id)
+    product_service.delete_product(seller=seller, product_id=product_id)
 
 
 """

@@ -2,49 +2,13 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from src.app.search.schemas import ProductSorting, ProductsSortingMap
-from src.core.logs.exceptions import ProductNotFoundError
-from src.models.collections import Category
 from src.models.products import Product, ProductVariant
-from src.models.reviews import Review
 from src.rules.product_rules import available_products
 
 
-class PublicService:
+class SearchService:
     def __init__(self, db: Session):
         self.db = db
-
-    def get_reviews_to_product(self, product_id: int, page: int, size: int):
-        product = self.db.query(Product).filter(Product.id == product_id).first()
-        if not product:
-            raise ProductNotFoundError(product_id=product_id)
-
-        reviews = (
-            self.db.query(Review)
-            .options(joinedload(Review.author))
-            .filter(Review.product_id == product_id)
-            .order_by(Review.created_at.desc())
-            .limit(size + 1)
-            .offset((page - 1) * size)
-            .all()
-        )
-        has_more = True if len(reviews) > size else False
-
-        return reviews[:size], has_more
-
-    def get_full_product_by_id(self, product_id: int):
-        product = (
-            self.db.query(Product)
-            .options(joinedload(Product.variants))
-            .filter(Product.id == product_id)
-            .first()
-        )
-        if not product:
-            raise ProductNotFoundError(product_id=product_id)
-
-        return product
-
-    def get_categories(self):
-        return self.db.query(Category).all()
 
     def search_products(
         self,
